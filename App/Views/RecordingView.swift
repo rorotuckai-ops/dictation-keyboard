@@ -147,13 +147,15 @@ struct CorrectionDiff: View {
     var body: some View {
         HStack(spacing: 8) {
             Text(change.from).strikethrough().foregroundStyle(Color.inkSecondary)
-            Image(systemName: "arrow.right").font(.caption).foregroundStyle(Color.inkSecondary)
-            Text(change.to).underline().foregroundStyle(Color.ink)
-                .padding(.horizontal, 6).padding(.vertical, 2)
-                .background(Color.insertion, in: RoundedRectangle(cornerRadius: 4))
+            if !change.to.isEmpty {
+                Image(systemName: "arrow.right").font(.caption).foregroundStyle(Color.inkSecondary)
+                Text(change.to).underline().foregroundStyle(Color.ink)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.insertion, in: RoundedRectangle(cornerRadius: 4))
+            }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(change.from) changed to \(change.to)")
+        .accessibilityLabel(change.to.isEmpty ? "Removed \(change.from)" : "\(change.from) changed to \(change.to)")
         .accessibilityIdentifier("host.correction")
     }
 }

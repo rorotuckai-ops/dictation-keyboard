@@ -65,7 +65,11 @@ enum SpokenCorrections {
             if let delete, replace == nil || delete.lowerBound <= replace!.lowerBound {
                 let before = String(text[..<delete.lowerBound])
                 let after = String(text[delete.upperBound...])
-                text = join(dropLastSentence(before), after)
+                let kept = dropLastSentence(before)
+                let removed = String(before.trimmingCharacters(in: .whitespacesAndNewlines).dropFirst(kept.count))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !removed.isEmpty { changes.append(CorrectionChange(from: removed, to: "")) }
+                text = join(kept, after)
                 applied += 1
             } else if let replace {
                 let before = String(text[..<replace.lowerBound])

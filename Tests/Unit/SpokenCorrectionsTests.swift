@@ -64,5 +64,7 @@ final class SpokenCorrectionsTests: XCTestCase {
         let result = SpokenCorrections.apply("Let's meet on Monday at noon, sorry I mean Tuesday.")
         XCTAssertEqual(result.changes, [CorrectionChange(from: "Monday", to: "Tuesday")])
         XCTAssertEqual(SpokenCorrections.apply("Hello there.").changes, [])
+        XCTAssertEqual(SpokenCorrections.apply("Hi there. Bring cake. Scratch that.").changes,
+                       [CorrectionChange(from: "Bring cake.", to: "")])
     }
 }
