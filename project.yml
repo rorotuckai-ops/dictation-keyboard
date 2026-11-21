@@ -35,7 +35,7 @@ targets:
   DictationKeyboardExtension:
     type: app-extension
     platform: iOS
-    sources: [Keyboard, Shared/AppGroup.swift, Shared/Bridge.swift, Shared/SpokenCorrections.swift, Shared/Transcriber.swift, Shared/WAVFile.swift, Shared/Prompts.swift]
+    sources: [Keyboard, Shared/AppGroup.swift, Shared/Bridge.swift, Shared/SpokenCorrections.swift, Shared/Transcriber.swift, Shared/WAVFile.swift, Shared/Prompts.swift, Shared/Theme.swift, Shared/PendingDictation.swift]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).keyboard

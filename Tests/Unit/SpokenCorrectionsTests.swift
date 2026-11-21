@@ -59,4 +59,10 @@ final class SpokenCorrectionsTests: XCTestCase {
         XCTAssertEqual(Prompts.clean("Here is the corrected text:\n\"Hello there.\""), "Hello there.")
         XCTAssertEqual(Prompts.clean("```\nHi.\n```"), "Hi.")
     }
+
+    func testCorrectionChangesForReviewDiff() {
+        let result = SpokenCorrections.apply("Let's meet on Monday at noon, sorry I mean Tuesday.")
+        XCTAssertEqual(result.changes, [CorrectionChange(from: "Monday", to: "Tuesday")])
+        XCTAssertEqual(SpokenCorrections.apply("Hello there.").changes, [])
+    }
 }

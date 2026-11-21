@@ -7,7 +7,7 @@ struct DictKBApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environment(model)
                 .environment(server)
                 .onOpenURL { url in

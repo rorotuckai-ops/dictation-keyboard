@@ -1,19 +1,15 @@
 import UIKit
 
-/// A compact QWERTY layout with shift, numbers and punctuation.
+/// Three rows of letters (or numbers and punctuation) with shift; space, delete and return live in the keyboard's utility row.
 final class KeysView: UIView {
     enum Key {
         case character(String)
-        case space
-        case delete
-        case `return`
     }
 
     var onKey: ((Key) -> Void)?
     private var shifted = true { didSet { rebuild() } }
     private var numbers = false { didSet { rebuild() } }
     private let rows = UIStackView()
-    private var deleteTimer: Timer?
 
     private static let letters = [["q","w","e","r","t","y","u","i","o","p"], ["a","s","d","f","g","h","j","k","l"], ["z","x","c","v","b","n","m"]]
     private static let symbols = [["1","2","3","4","5","6","7","8","9","0"], ["-","/",":",";","(",")","$","&","@","\""], [".",",","?","!","'"]]
@@ -54,24 +50,12 @@ final class KeysView: UIView {
                     self.shifted.toggle()
                 }
                 shift.accessibilityLabel = "shift"
-                let delete = key("⌫", id: "key.delete", wide: true) { [weak self] in self?.onKey?(.delete) }
-                delete.accessibilityLabel = "delete"
-                let hold = UILongPressGestureRecognizer(target: self, action: #selector(deleteHeld(_:)))
-                hold.minimumPressDuration = 0.4
-                delete.addGestureRecognizer(hold)
+                let mode = key(numbers ? "ABC" : "123", id: "key.mode", wide: true) { [weak self] in self?.numbers.toggle() }
                 views.insert(shift, at: 0)
-                views.append(delete)
+                views.append(mode)
             }
             rows.addArrangedSubview(row(views))
         }
-        let toggle = key(numbers ? "ABC" : "123", id: "key.mode", wide: true) { [weak self] in self?.numbers.toggle() }
-        let space = key("space", id: "key.space") { [weak self] in
-            self?.onKey?(.space)
-        }
-        let enter = key("return", id: "key.return", wide: true) { [weak self] in self?.onKey?(.return) }
-        let bottom = row([toggle, space, enter])
-        space.widthAnchor.constraint(equalTo: bottom.widthAnchor, multiplier: 0.5).isActive = true
-        rows.addArrangedSubview(bottom)
     }
 
     private func row(_ views: [UIView]) -> UIStackView {
@@ -97,19 +81,6 @@ final class KeysView: UIView {
         button.accessibilityIdentifier = id
         return button
     }
-
-    @objc private func deleteHeld(_ gesture: UILongPressGestureRecognizer) {
-        switch gesture.state {
-        case .began:
-            deleteTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
-                MainActor.assumeIsolated { self?.onKey?(.delete) }
-            }
-        case .ended, .cancelled, .failed:
-            deleteTimer?.invalidate()
-            deleteTimer = nil
-        default: break
-        }
-    }
 }
 
 final class KeyButton: UIButton {
@@ -120,18 +91,21 @@ final class KeyButton: UIButton {
         self.wide = wide
         self.action = action
         super.init(frame: .zero)
-        backgroundColor = wide ? .systemGray4 : .systemBackground
-        layer.cornerRadius = 5
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.25
-        layer.shadowOffset = CGSize(width: 0, height: 1)
-        layer.shadowRadius = 0
-        setTitleColor(.label, for: .normal)
+        backgroundColor = wide ? Palette.insertion : Palette.surface
+        layer.cornerRadius = 8
+        layer.borderWidth = 0.5
+        layer.borderColor = Palette.separator.cgColor
+        setTitleColor(Palette.text, for: .normal)
         titleLabel?.font = .systemFont(ofSize: wide ? 16 : 22)
         addTarget(self, action: #selector(tapped), for: .touchUpInside)
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    override func traitCollectionDidChange(_ previous: UITraitCollection?) {
+        super.traitCollectionDidChange(previous)
+        layer.borderColor = Palette.separator.resolvedColor(with: traitCollection).cgColor
+    }
 
     @objc private func tapped() {
         UIDevice.current.playInputClick()

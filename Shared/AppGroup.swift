@@ -29,4 +29,9 @@ enum SharedKeys {
     static let modelReady = "modelReady"
     static let modelName = "modelName"
     static let useModelForCorrections = "useModelForCorrections"
+    static let spokenCorrections = "spokenCorrections"
+    static let haptics = "haptics"
+    /// Written by the keyboard each time it runs with Full Access.
+    static let keyboardHandshake = "keyboardHandshake"
+    static let pendingDictation = "pendingDictation"
 }

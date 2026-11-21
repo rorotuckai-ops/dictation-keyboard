@@ -5,19 +5,32 @@ final class KeyboardViewController: UIInputViewController {
         case idle
         case listening
         case transcribing
-        case fixing
+        case fixing(BridgeTask)
     }
 
     private var state: State = .idle { didSet { render() } }
     private var mic: MicCapture?
     private let keys = KeysView()
+    private let header = UILabel()
+    private let undoButton = UIButton(type: .system)
+    private let preview = UILabel()
     private let micButton = UIButton(type: .system)
     private let fixButton = UIButton(type: .system)
     private let rewriteButton = UIButton(type: .system)
+    private let discardButton = UIButton(type: .system)
+    private let insertButton = UIButton(type: .system)
+    private let tools = UIView()
+    private let review = UIView()
     private let globeButton = UIButton(type: .system)
-    private let status = UILabel()
+    private let lettersButton = UIButton(type: .system)
+    private let spaceKey = KeyButton(wide: false) {}
+    private var message: String?
+    private var lettersShown = false { didSet { render() } }
     private var pending: PendingEdit?
     private var waitTask: Task<Void, Never>?
+    private var deleteTimer: Timer?
+    /// The last Fix, Rewrite or Insert, so Undo can restore what was there before.
+    private var lastEdit: (original: String, result: String)?
 
     /// A model edit handed to the host app, remembered so it can be applied after a round trip.
     private struct PendingEdit: Codable {
@@ -30,9 +43,10 @@ final class KeyboardViewController: UIInputViewController {
         var fallback: String?
     }
 
-    private var rewriteMode: Bool {
-        get { AppGroup.defaults.bool(forKey: SharedKeys.rewriteMode) }
-        set { AppGroup.defaults.set(newValue, forKey: SharedKeys.rewriteMode) }
+    private var hostDictation: PendingDictation? {
+        guard let value = PendingDictation.current else { return nil }
+        if value.expired { PendingDictation.current = nil; return nil }
+        return value
     }
 
     override func viewDidLoad() {
@@ -43,7 +57,9 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        if hasFullAccess { AppGroup.defaults.set(Date().timeIntervalSince1970, forKey: SharedKeys.keyboardHandshake) }
         resumePendingEdit()
+        render()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -56,106 +72,305 @@ final class KeyboardViewController: UIInputViewController {
         globeButton.isHidden = !needsInputModeSwitchKey
     }
 
+    override func textDidChange(_ textInput: (any UITextInput)?) {
+        super.textDidChange(textInput)
+        render()
+    }
+
+    override func selectionDidChange(_ textInput: (any UITextInput)?) {
+        super.selectionDidChange(textInput)
+        render()
+    }
+
     // MARK: Layout
 
     private func buildLayout() {
         guard let root = inputView else { return }
         root.allowsSelfSizing = true
+        root.backgroundColor = Palette.keyboard
 
-        configure(micButton, symbol: "mic.fill", title: nil, id: "kb.mic", label: "Dictate")
-        micButton.tintColor = .white
-        micButton.backgroundColor = .systemBlue
-        micButton.layer.cornerRadius = 20
+        header.font = .systemFont(ofSize: 14, weight: .semibold)
+        header.textColor = Palette.text
+        header.adjustsFontForContentSizeCategory = true
+        header.accessibilityIdentifier = "kb.status"
+        header.accessibilityTraits.insert(.updatesFrequently)
+
+        var undo = UIButton.Configuration.plain()
+        undo.title = "Undo"
+        undo.baseForegroundColor = Palette.accent
+        undoButton.configuration = undo
+        undoButton.accessibilityIdentifier = "kb.undo"
+        undoButton.accessibilityLabel = "Undo last edit"
+        undoButton.addTarget(self, action: #selector(undoTapped), for: .touchUpInside)
+
+        preview.font = .systemFont(ofSize: 17)
+        preview.numberOfLines = 3
+        preview.lineBreakMode = .byTruncatingTail
+        preview.accessibilityIdentifier = "kb.preview"
+
+        var micConfig = UIButton.Configuration.filled()
+        micConfig.cornerStyle = .capsule
+        micConfig.baseBackgroundColor = Palette.accent
+        micConfig.baseForegroundColor = Palette.onAccent
+        micConfig.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 24, weight: .semibold)
+        micButton.configuration = micConfig
+        micButton.accessibilityIdentifier = "kb.mic"
         micButton.addTarget(self, action: #selector(micTapped), for: .touchUpInside)
 
-        configure(fixButton, symbol: "wand.and.stars", title: "Fix", id: "kb.fix", label: "Fix text")
+        action(fixButton, title: "Fix text", symbol: "checkmark", id: "kb.fix", label: "Fix text")
         fixButton.addTarget(self, action: #selector(fixTapped), for: .touchUpInside)
-
-        configure(rewriteButton, symbol: "text.quote", title: "Rewrite", id: "kb.rewrite", label: "Rewrite mode")
+        action(rewriteButton, title: "Rewrite", symbol: nil, id: "kb.rewrite", label: "Rewrite text")
         rewriteButton.addTarget(self, action: #selector(rewriteTapped), for: .touchUpInside)
 
-        configure(globeButton, symbol: "globe", title: nil, id: "kb.globe", label: "Next keyboard")
+        var discard = UIButton.Configuration.plain()
+        discard.title = "Discard"
+        discard.baseForegroundColor = Palette.secondary
+        discardButton.configuration = discard
+        discardButton.accessibilityIdentifier = "kb.discard"
+        discardButton.addTarget(self, action: #selector(discardTapped), for: .touchUpInside)
+        var insert = UIButton.Configuration.filled()
+        insert.title = "Insert"
+        insert.baseBackgroundColor = Palette.accent
+        insert.baseForegroundColor = Palette.onAccent
+        insert.background.cornerRadius = 9
+        insert.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+        insertButton.configuration = insert
+        insertButton.accessibilityIdentifier = "kb.insert"
+        insertButton.accessibilityLabel = "Insert dictated text"
+        insertButton.addTarget(self, action: #selector(insertTapped), for: .touchUpInside)
+
+        utility(globeButton, symbol: "globe", id: "kb.globe", label: "Next keyboard")
         globeButton.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
+        utility(lettersButton, symbol: "keyboard", id: "kb.letters", label: "Letters")
+        lettersButton.addTarget(self, action: #selector(lettersTapped), for: .touchUpInside)
+        spaceKey.setTitle("space", for: .normal)
+        spaceKey.setTitleColor(Palette.secondary, for: .normal)
+        spaceKey.accessibilityIdentifier = "key.space"
+        spaceKey.addTarget(self, action: #selector(spaceTapped), for: .touchUpInside)
+        let delete = KeyButton(wide: true) { [weak self] in self?.textDocumentProxy.deleteBackward() }
+        delete.setImage(UIImage(systemName: "delete.left"), for: .normal)
+        delete.tintColor = Palette.text
+        delete.accessibilityIdentifier = "key.delete"
+        delete.accessibilityLabel = "delete"
+        delete.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(deleteHeld(_:))))
+        let enter = KeyButton(wide: true) { [weak self] in self?.textDocumentProxy.insertText("\n") }
+        enter.setImage(UIImage(systemName: "return"), for: .normal)
+        enter.tintColor = Palette.text
+        enter.accessibilityIdentifier = "key.return"
+        enter.accessibilityLabel = "return"
 
-        status.font = .preferredFont(forTextStyle: .footnote)
-        status.textColor = .secondaryLabel
-        status.adjustsFontSizeToFitWidth = true
-        status.minimumScaleFactor = 0.7
-        status.accessibilityIdentifier = "kb.status"
-        status.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        keys.onKey = { [weak self] key in
+            if case .character(let c) = key { self?.textDocumentProxy.insertText(c) }
+        }
 
-        let bar = UIStackView(arrangedSubviews: [globeButton, fixButton, rewriteButton, status, micButton])
-        bar.axis = .horizontal
-        bar.spacing = 8
-        bar.alignment = .center
-        bar.translatesAutoresizingMaskIntoConstraints = false
+        let headerRow = UIStackView(arrangedSubviews: [header, undoButton])
+        headerRow.alignment = .center
+        let actions = UIStackView(arrangedSubviews: [fixButton, rewriteButton])
+        actions.spacing = 8
+        actions.distribution = .fillEqually
+        let top = UIStackView(arrangedSubviews: [preview, micButton])
+        top.spacing = 12
+        top.alignment = .center
+        let toolStack = UIStackView(arrangedSubviews: [top, actions])
+        toolStack.axis = .vertical
+        toolStack.spacing = 12
+        pin(toolStack, in: tools)
 
-        keys.translatesAutoresizingMaskIntoConstraints = false
-        keys.onKey = { [weak self] in self?.handle($0) }
+        let reviewButtons = UIStackView(arrangedSubviews: [discardButton, UIView(), insertButton])
+        reviewButtons.alignment = .center
+        let reviewText = UILabel()
+        reviewText.tag = 1
+        reviewText.font = .systemFont(ofSize: 17)
+        reviewText.textColor = Palette.text
+        reviewText.numberOfLines = 3
+        reviewText.accessibilityIdentifier = "kb.pendingText"
+        let reviewStack = UIStackView(arrangedSubviews: [reviewText, UIView(), reviewButtons])
+        reviewStack.axis = .vertical
+        reviewStack.spacing = 8
+        pin(reviewStack, in: review)
 
-        root.addSubview(bar)
-        root.addSubview(keys)
+        let main = UIView()
+        for view in [tools, review, keys] as [UIView] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            main.addSubview(view)
+            NSLayoutConstraint.activate([
+                view.topAnchor.constraint(equalTo: main.topAnchor),
+                view.bottomAnchor.constraint(equalTo: main.bottomAnchor),
+                view.leadingAnchor.constraint(equalTo: main.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: main.trailingAnchor),
+            ])
+        }
+
+        let utilityRow = UIStackView(arrangedSubviews: [globeButton, lettersButton, spaceKey, delete, enter])
+        utilityRow.spacing = 6
+        let separator = UIView()
+        separator.backgroundColor = Palette.separator
+
+        let column = UIStackView(arrangedSubviews: [separator, headerRow, main, utilityRow])
+        column.axis = .vertical
+        column.spacing = 0
+        column.setCustomSpacing(4, after: main)
+        column.translatesAutoresizingMaskIntoConstraints = false
+        column.isLayoutMarginsRelativeArrangement = true
+        column.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 8, bottom: 2, trailing: 8)
+        root.addSubview(column)
         NSLayoutConstraint.activate([
-            bar.topAnchor.constraint(equalTo: root.topAnchor, constant: 6),
-            bar.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 8),
-            bar.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -8),
-            bar.heightAnchor.constraint(equalToConstant: 40),
-            micButton.widthAnchor.constraint(equalToConstant: 64),
-            micButton.heightAnchor.constraint(equalToConstant: 40),
-            globeButton.widthAnchor.constraint(equalToConstant: 36),
-            keys.topAnchor.constraint(equalTo: bar.bottomAnchor, constant: 6),
-            keys.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 3),
-            keys.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -3),
-            keys.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -4),
-            keys.heightAnchor.constraint(equalToConstant: 210),
+            column.topAnchor.constraint(equalTo: root.topAnchor),
+            column.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            column.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            column.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            separator.heightAnchor.constraint(equalToConstant: 1),
+            headerRow.heightAnchor.constraint(equalToConstant: 36),
+            main.heightAnchor.constraint(equalToConstant: 169),
+            utilityRow.heightAnchor.constraint(equalToConstant: 50),
+            micButton.widthAnchor.constraint(equalToConstant: 66),
+            micButton.heightAnchor.constraint(equalToConstant: 66),
+            actions.heightAnchor.constraint(equalToConstant: 44),
+            insertButton.heightAnchor.constraint(equalToConstant: 44),
+            discardButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            undoButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
+            globeButton.widthAnchor.constraint(equalToConstant: 44),
+            lettersButton.widthAnchor.constraint(equalToConstant: 44),
+            delete.widthAnchor.constraint(equalToConstant: 52),
+            enter.widthAnchor.constraint(equalToConstant: 52),
+        ])
+        for button in [globeButton, lettersButton, spaceKey, delete, enter] as [UIView] {
+            button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        }
+        utilityRow.alignment = .center
+    }
+
+    private func pin(_ stack: UIStackView, in container: UIView) {
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
         ])
     }
 
-    private func configure(_ button: UIButton, symbol: String, title: String?, id: String, label: String) {
-        var config = UIButton.Configuration.plain()
-        config.image = UIImage(systemName: symbol)
+    private func action(_ button: UIButton, title: String, symbol: String?, id: String, label: String) {
+        var config = UIButton.Configuration.filled()
         config.title = title
-        config.imagePadding = 4
-        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
-        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)
+        if let symbol { config.image = UIImage(systemName: symbol) }
+        config.imagePadding = 6
+        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+        config.baseBackgroundColor = Palette.surface
+        config.baseForegroundColor = Palette.text
+        config.background.cornerRadius = 9
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer {
+            var a = $0; a.font = .systemFont(ofSize: 15, weight: .medium); return a
+        }
         button.configuration = config
         button.accessibilityIdentifier = id
         button.accessibilityLabel = label
-        button.backgroundColor = .secondarySystemBackground
-        button.layer.cornerRadius = 10
-        button.setContentHuggingPriority(.required, for: .horizontal)
+    }
+
+    private func utility(_ button: UIButton, symbol: String, id: String, label: String) {
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: symbol)
+        config.baseForegroundColor = Palette.text
+        button.configuration = config
+        button.accessibilityIdentifier = id
+        button.accessibilityLabel = label
     }
 
     private func render() {
-        micButton.configuration?.image = UIImage(systemName: state == .listening ? "stop.fill" : "mic.fill")
-        micButton.backgroundColor = state == .listening ? .systemRed : .systemBlue
-        micButton.accessibilityLabel = state == .listening ? "Stop dictation" : "Dictate"
-        micButton.isEnabled = state == .idle || state == .listening
+        guard isViewLoaded else { return }
+        let ready = state == .idle ? hostDictation : nil
+        review.isHidden = ready == nil
+        keys.isHidden = ready != nil || !lettersShown
+        tools.isHidden = ready != nil || lettersShown
+        (review.viewWithTag(1) as? UILabel)?.text = ready?.text
+
+        lettersButton.configuration?.image = UIImage(systemName: lettersShown ? "mic" : "keyboard")
+        lettersButton.accessibilityLabel = lettersShown ? "Dictation tools" : "Letters"
+
+        let listening = state == .listening
+        micButton.configuration?.image = UIImage(systemName: listening ? "stop.fill" : "mic.fill")
+        micButton.accessibilityLabel = listening ? "Stop dictation" : "Start dictation"
+        micButton.isEnabled = state == .idle || listening
         fixButton.isEnabled = state == .idle
-        rewriteButton.backgroundColor = rewriteMode ? UIColor.systemBlue.withAlphaComponent(0.25) : .secondarySystemBackground
-        rewriteButton.accessibilityValue = rewriteMode ? "on" : "off"
-        switch state {
-        case .idle: if status.text?.hasSuffix("…") == true { status.text = nil }
-        case .listening: status.text = "Listening…"
-        case .transcribing: status.text = "Transcribing…"
-        case .fixing: status.text = rewriteMode ? "Rewriting…" : "Fixing…"
+        rewriteButton.isEnabled = state == .idle
+
+        let proxy = textDocumentProxy
+        if let selected = proxy.selectedText, !selected.isEmpty {
+            preview.text = selected
+            preview.textColor = Palette.text
+        } else {
+            let context = (proxy.documentContextBeforeInput ?? "") + (proxy.documentContextAfterInput ?? "")
+            let trimmed = context.trimmingCharacters(in: .whitespacesAndNewlines)
+            preview.text = trimmed.isEmpty ? "Tap the mic to dictate, or select text to fix." : trimmed
+            preview.textColor = trimmed.isEmpty ? Palette.secondary : Palette.text
         }
+
+        switch state {
+        case .idle: header.text = message ?? (ready != nil ? "Text ready to insert" : "Ready")
+        case .listening: header.text = message ?? "Listening…"
+        case .transcribing: header.text = "Processing dictation…"
+        case .fixing(let task): header.text = task == .rewrite ? "Rewriting…" : (task == .correct ? "Applying corrections…" : "Fixing text…")
+        }
+        header.textColor = Palette.text
+        undoButton.isHidden = lastEdit == nil || state != .idle
     }
 
     private func show(_ message: String?) {
-        status.text = message
+        self.message = message
+        render()
+    }
+
+    private func feedback(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        guard AppGroup.defaults.object(forKey: SharedKeys.haptics) as? Bool ?? true else { return }
+        UINotificationFeedbackGenerator().notificationOccurred(type)
     }
 
     // MARK: Typing
 
-    private func handle(_ key: KeysView.Key) {
-        let proxy = textDocumentProxy
-        switch key {
-        case .character(let c): proxy.insertText(c)
-        case .space: proxy.insertText(" ")
-        case .delete: proxy.deleteBackward()
-        case .return: proxy.insertText("\n")
+    @objc private func spaceTapped() { textDocumentProxy.insertText(" ") }
+
+    @objc private func lettersTapped() { lettersShown.toggle() }
+
+    @objc private func deleteHeld(_ gesture: UILongPressGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            deleteTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.textDocumentProxy.deleteBackward() }
+            }
+        case .ended, .cancelled, .failed:
+            deleteTimer?.invalidate()
+            deleteTimer = nil
+        default: break
         }
+    }
+
+    @objc private func insertTapped() {
+        guard let ready = hostDictation else { render(); return }
+        PendingDictation.current = nil
+        insert(dictated: ready.text)
+        lastEdit = (original: "", result: ready.text)
+        show("Inserted")
+        feedback(.success)
+    }
+
+    @objc private func discardTapped() {
+        PendingDictation.current = nil
+        show(nil)
+    }
+
+    @objc private func undoTapped() {
+        guard let edit = lastEdit else { return }
+        lastEdit = nil
+        let before = textDocumentProxy.documentContextBeforeInput ?? ""
+        guard before.hasSuffix(edit.result) else {
+            show("Text changed; nothing undone")
+            feedback(.warning)
+            return
+        }
+        for _ in 0..<edit.result.count { textDocumentProxy.deleteBackward() }
+        textDocumentProxy.insertText(edit.original)
+        show("Undone")
     }
 
     // MARK: Dictation
@@ -170,9 +385,11 @@ final class KeyboardViewController: UIInputViewController {
 
     private func startListening() {
         guard hasFullAccess else {
-            show("Allow Full Access for the mic")
+            show("Allow Full Access to dictate")
+            feedback(.warning)
             return
         }
+        message = nil
         #if DEBUG
         if let fixture = DebugFixture.transcript ?? DebugFixture.audio {
             state = .listening
@@ -186,11 +403,12 @@ final class KeyboardViewController: UIInputViewController {
             capture.onEvent = { [weak self] event in
                 guard let self else { return }
                 switch event {
-                case .started: self.show("Listening…")
+                case .started: self.show(nil)
                 case .level: break
                 case .failed(let message):
                     self.state = .idle
                     self.show("Mic: \(message)")
+                    self.feedback(.warning)
                 }
             }
             mic = capture
@@ -213,7 +431,8 @@ final class KeyboardViewController: UIInputViewController {
             let pcm = mic.stop()
             guard pcm.count > mic.sampleRate / 4 else {
                 state = .idle
-                show("Didn't catch that")
+                show("No speech detected")
+                feedback(.warning)
                 return
             }
             let url = AppGroup.directory("audio").appendingPathComponent("dictation.wav")
@@ -235,6 +454,7 @@ final class KeyboardViewController: UIInputViewController {
                 return
             }
             #endif
+            defer { if clip.lastPathComponent == "dictation.wav", clip.path.contains("/audio/") { try? FileManager.default.removeItem(at: clip) } }
             do {
                 let raw = try await Transcriber.transcribe(clip)
                 await self.insertDictation(raw)
@@ -247,16 +467,22 @@ final class KeyboardViewController: UIInputViewController {
                 } else {
                     self.state = .idle
                     self.show(error.localizedDescription)
+                    self.feedback(.warning)
                 }
             }
         }
     }
 
     private func insertDictation(_ raw: String) async {
+        guard AppGroup.defaults.object(forKey: SharedKeys.spokenCorrections) as? Bool ?? true else {
+            insert(dictated: raw)
+            state = .idle
+            return
+        }
         let corrected = SpokenCorrections.apply(raw)
         let useModel = AppGroup.defaults.object(forKey: SharedKeys.useModelForCorrections) as? Bool ?? true
         if corrected.needsModel, useModel, Bridge.hostIsAlive {
-            state = .fixing
+            state = .fixing(.correct)
             if let text = await askHost(.correct, text: raw, timeout: 30) {
                 insert(dictated: text)
                 show("Corrected with Gemma")
@@ -265,8 +491,9 @@ final class KeyboardViewController: UIInputViewController {
             }
         }
         insert(dictated: corrected.text)
-        show(corrected.applied > 0 ? "Applied \(corrected.applied) correction\(corrected.applied == 1 ? "" : "s")" : nil)
+        message = corrected.applied > 0 ? "Applied \(corrected.applied) correction\(corrected.applied == 1 ? "" : "s")" : nil
         state = .idle
+        feedback(.success)
     }
 
     private func insert(dictated text: String) {
@@ -277,20 +504,20 @@ final class KeyboardViewController: UIInputViewController {
             out = " " + out
         }
         textDocumentProxy.insertText(out)
+        lastEdit = (original: "", result: out)
     }
 
     // MARK: Fix
 
-    @objc private func rewriteTapped() {
-        rewriteMode.toggle()
-        show(rewriteMode ? "Rewrite mode on" : "Rewrite mode off")
-        render()
-    }
+    @objc private func rewriteTapped() { run(.rewrite) }
 
-    @objc private func fixTapped() {
+    @objc private func fixTapped() { run(.fix) }
+
+    private func run(_ task: BridgeTask) {
         guard state == .idle else { return }
         guard hasFullAccess else {
-            show("Allow Full Access to use Fix")
+            show("Allow Full Access to use \(task == .rewrite ? "Rewrite" : "Fix")")
+            feedback(.warning)
             return
         }
         let proxy = textDocumentProxy
@@ -302,18 +529,17 @@ final class KeyboardViewController: UIInputViewController {
             let after = proxy.documentContextAfterInput ?? ""
             let text = before + after
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                show("Nothing to fix")
+                show("Nothing to \(task == .rewrite ? "rewrite" : "fix") here")
                 return
             }
             edit = PendingEdit(id: UUID(), original: text, selection: false, before: before.count, after: after.count, insertion: false)
         }
-        let task: BridgeTask = rewriteMode ? .rewrite : .fix
-        state = .fixing
+        message = nil
+        state = .fixing(task)
         Task { @MainActor in
             if Bridge.hostIsAlive {
                 if let text = await self.askHost(task, text: edit.original, timeout: 120) {
-                    self.apply(edit, text: text)
-                    self.show(task == .rewrite ? "Rewritten" : "Fixed")
+                    if self.apply(edit, text: text) { self.message = task == .rewrite ? "Rewritten" : "Fixed" }
                 }
                 self.state = .idle
             } else {
@@ -358,7 +584,7 @@ final class KeyboardViewController: UIInputViewController {
                 if let response = Bridge.takeResponse(edit.id) {
                     self.pending = nil
                     AppGroup.defaults.removeObject(forKey: "pendingEdit")
-                    if let text = response.text { self.apply(edit, text: text); self.show("Fixed") }
+                    if let text = response.text { if self.apply(edit, text: text) { self.show("Fixed") } }
                     else { self.show(response.error ?? "Gemma failed") }
                     return
                 }
@@ -383,42 +609,31 @@ final class KeyboardViewController: UIInputViewController {
         return nil
     }
 
-    private func apply(_ edit: PendingEdit, text: String) {
+    /// Replaces the text the edit was made from, only if it is still exactly what's there.
+    @discardableResult
+    private func apply(_ edit: PendingEdit, text: String) -> Bool {
         let proxy = textDocumentProxy
         if edit.selection {
             guard proxy.selectedText == edit.original else {
-                show("Selection changed; select the text and try again")
-                return
+                show("Selection changed; nothing replaced")
+                feedback(.warning)
+                return false
             }
             proxy.insertText(text)
-            return
+        } else {
+            let before = proxy.documentContextBeforeInput ?? ""
+            let after = proxy.documentContextAfterInput ?? ""
+            guard before + after == edit.original else {
+                show("Text changed; nothing replaced")
+                feedback(.warning)
+                return false
+            }
+            if !after.isEmpty { proxy.adjustTextPosition(byCharacterOffset: after.count) }
+            for _ in 0..<(before.count + after.count) { proxy.deleteBackward() }
+            proxy.insertText(text)
         }
-        let before = proxy.documentContextBeforeInput ?? ""
-        let after = proxy.documentContextAfterInput ?? ""
-        guard before + after == edit.original else {
-            show("Text changed while fixing; tap Fix again")
-            return
-        }
-        if !after.isEmpty { proxy.adjustTextPosition(byCharacterOffset: after.count) }
-        for _ in 0..<(before.count + after.count) { proxy.deleteBackward() }
-        proxy.insertText(text)
+        lastEdit = (original: edit.original, result: text)
+        feedback(.success)
+        return true
     }
 }
-
-#if DEBUG
-/// Test hook for the simulator, which has no microphone: a clip placed at
-/// `<App Group>/fixtures/dictation.wav` stands in for the mic in Debug builds.
-enum DebugFixture {
-    static var audio: URL? {
-        let url = AppGroup.container.appendingPathComponent("fixtures/dictation.wav")
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
-    }
-
-    /// The simulator's speech service can't run recognition, so `fixtures/dictation.txt` stands in
-    /// for the recognizer's output; the rest of the pipeline (corrections, insertion) runs as normal.
-    static var transcript: URL? {
-        let url = AppGroup.container.appendingPathComponent("fixtures/dictation.txt")
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
-    }
-}
-#endif
