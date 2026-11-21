@@ -503,8 +503,9 @@ final class KeyboardViewController: UIInputViewController {
         if let last = before.last, !last.isWhitespace, !(textDocumentProxy.selectedText?.isEmpty == false) {
             out = " " + out
         }
+        let replaced = textDocumentProxy.selectedText ?? ""
         textDocumentProxy.insertText(out)
-        lastEdit = (original: "", result: out)
+        lastEdit = (original: replaced, result: out)
     }
 
     // MARK: Fix
