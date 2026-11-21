@@ -21,6 +21,8 @@ final class KeyboardViewController: UIInputViewController {
     private let insertButton = UIButton(type: .system)
     private let tools = UIView()
     private let review = UIView()
+    private let reviewText = UILabel()
+    private let reviewSpacer = UIView()
     private let globeButton = UIButton(type: .system)
     private let lettersButton = UIButton(type: .system)
     private let spaceKey = KeyButton(wide: false) {}
@@ -112,21 +114,23 @@ final class KeyboardViewController: UIInputViewController {
         root.allowsSelfSizing = true
         root.backgroundColor = Palette.keyboard
 
-        header.font = .systemFont(ofSize: 14, weight: .semibold)
+        header.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: 14, weight: .semibold), maximumPointSize: 20)
         header.textColor = Palette.text
         header.adjustsFontForContentSizeCategory = true
         header.accessibilityIdentifier = "kb.status"
         header.accessibilityTraits.insert(.updatesFrequently)
+        header.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         var undo = UIButton.Configuration.plain()
         undo.title = "Undo"
-        undo.baseForegroundColor = Palette.accent
+        undo.baseForegroundColor = Palette.text
         undoButton.configuration = undo
         undoButton.accessibilityIdentifier = "kb.undo"
         undoButton.accessibilityLabel = "Undo last edit"
         undoButton.addTarget(self, action: #selector(undoTapped), for: .touchUpInside)
 
-        preview.font = .systemFont(ofSize: 17)
+        preview.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 17), maximumPointSize: 36)
+        preview.adjustsFontForContentSizeCategory = true
         preview.numberOfLines = 3
         preview.lineBreakMode = .byTruncatingTail
         preview.accessibilityIdentifier = "kb.preview"
@@ -199,13 +203,16 @@ final class KeyboardViewController: UIInputViewController {
         toolStack.spacing = 12
         pin(toolStack, in: tools)
 
-        let reviewButtons = UIStackView(arrangedSubviews: [discardButton, UIView(), insertButton])
+        let reviewButtons = UIStackView(arrangedSubviews: [discardButton, reviewSpacer, insertButton])
         reviewButtons.alignment = .center
-        let reviewText = UILabel()
-        reviewText.tag = 1
-        reviewText.font = .systemFont(ofSize: 17)
+        reviewButtons.spacing = 8
+        discardButton.setContentHuggingPriority(.required, for: .horizontal)
+        discardButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
+        reviewText.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 17), maximumPointSize: 36)
+        reviewText.adjustsFontForContentSizeCategory = true
         reviewText.textColor = Palette.text
         reviewText.numberOfLines = 3
+        reviewText.lineBreakMode = .byTruncatingTail
         reviewText.accessibilityIdentifier = "kb.pendingText"
         let reviewStack = UIStackView(arrangedSubviews: [reviewText, UIView(), reviewButtons])
         reviewStack.axis = .vertical
@@ -235,23 +242,23 @@ final class KeyboardViewController: UIInputViewController {
         column.setCustomSpacing(4, after: main)
         column.translatesAutoresizingMaskIntoConstraints = false
         column.isLayoutMarginsRelativeArrangement = true
-        column.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 8, bottom: 2, trailing: 8)
+        column.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
         root.addSubview(column)
         NSLayoutConstraint.activate([
             column.topAnchor.constraint(equalTo: root.topAnchor),
             column.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             column.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            column.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            column.bottomAnchor.constraint(equalTo: root.safeAreaLayoutGuide.bottomAnchor),
             separator.heightAnchor.constraint(equalToConstant: 1),
-            headerRow.heightAnchor.constraint(equalToConstant: 36),
-            main.heightAnchor.constraint(equalToConstant: 169),
+            headerRow.heightAnchor.constraint(equalToConstant: 44),
+            main.heightAnchor.constraint(equalToConstant: 161),
             utilityRow.heightAnchor.constraint(equalToConstant: 50),
             micButton.widthAnchor.constraint(equalToConstant: 66),
             micButton.heightAnchor.constraint(equalToConstant: 66),
             actions.heightAnchor.constraint(equalToConstant: 44),
             insertButton.heightAnchor.constraint(equalToConstant: 44),
             discardButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
-            undoButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
+            undoButton.heightAnchor.constraint(equalToConstant: 44),
             globeButton.widthAnchor.constraint(equalToConstant: 44),
             lettersButton.widthAnchor.constraint(equalToConstant: 44),
             delete.widthAnchor.constraint(equalToConstant: 52),
@@ -306,7 +313,14 @@ final class KeyboardViewController: UIInputViewController {
         review.isHidden = ready == nil
         keys.isHidden = ready != nil || !lettersShown
         tools.isHidden = ready != nil || lettersShown
-        (review.viewWithTag(1) as? UILabel)?.text = ready?.text
+        reviewText.text = ready?.text
+        let accessible = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        reviewSpacer.isHidden = accessible
+        preview.numberOfLines = accessible ? 2 : 3
+        reviewText.numberOfLines = accessible ? 2 : 3
+        discardButton.configuration?.title = accessible ? nil : "Discard"
+        discardButton.configuration?.image = accessible ? UIImage(systemName: "xmark") : nil
+        discardButton.accessibilityLabel = "Discard dictated text"
 
         lettersButton.configuration?.image = UIImage(systemName: lettersShown ? "mic" : "keyboard")
         lettersButton.accessibilityLabel = lettersShown ? "Dictation tools" : "Letters"
@@ -316,17 +330,21 @@ final class KeyboardViewController: UIInputViewController {
         micButton.accessibilityLabel = listening ? "Stop dictation" : "Start dictation"
         micButton.isEnabled = state == .idle || listening
         micButton.configuration?.showsActivityIndicator = state != .idle && !listening
-        fixButton.isEnabled = state == .idle
-        rewriteButton.isEnabled = state == .idle
 
         let proxy = textDocumentProxy
+        let context = (proxy.documentContextBeforeInput ?? "") + (proxy.documentContextAfterInput ?? "")
+        let availableText = proxy.selectedText.flatMap { $0.isEmpty ? nil : $0 } ?? context
+        let hasText = !availableText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        fixButton.isEnabled = state == .idle && hasText
+        rewriteButton.isEnabled = state == .idle && hasText
+        fixButton.accessibilityLabel = proxy.selectedText?.isEmpty == false ? "Fix selected text" : "Fix available text"
+        rewriteButton.accessibilityLabel = proxy.selectedText?.isEmpty == false ? "Rewrite selected text" : "Rewrite available text"
         if let selected = proxy.selectedText, !selected.isEmpty {
             preview.text = selected
             preview.textColor = Palette.text
         } else {
-            let context = (proxy.documentContextBeforeInput ?? "") + (proxy.documentContextAfterInput ?? "")
             let trimmed = context.trimmingCharacters(in: .whitespacesAndNewlines)
-            preview.text = trimmed.isEmpty ? "Tap the mic to dictate, or select text to fix." : trimmed
+            preview.text = trimmed.isEmpty ? "Dictate into this field." : trimmed
             preview.textColor = trimmed.isEmpty ? Palette.secondary : Palette.text
         }
 
@@ -336,8 +354,13 @@ final class KeyboardViewController: UIInputViewController {
         case .transcribing: header.text = "Processing dictation…"
         case .fixing(let task): header.text = task == .rewrite ? "Rewriting…" : (task == .correct ? "Applying corrections…" : "Fixing text…")
         }
-        header.textColor = Palette.text
+        header.textColor = listening ? Palette.accent : Palette.text
         undoButton.isHidden = lastEdit == nil || state != .idle
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        render()
     }
 
     private func show(_ message: String?) {

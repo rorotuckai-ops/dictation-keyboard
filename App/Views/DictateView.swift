@@ -2,6 +2,7 @@ import AVFoundation
 import SwiftUI
 
 struct DictateView: View {
+    @ScaledMetric(relativeTo: .title2) private var resultSize = 23
     @Environment(ModelService.self) private var model
     @Environment(BridgeServer.self) private var server
     @Environment(\.scenePhase) private var scenePhase
@@ -14,7 +15,8 @@ struct DictateView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            GeometryReader { geometry in
+              ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     if server.returnHint {
                         Label(server.busy ? "Working on your text…" : "Done. Tap ◀ at the top left to go back to your app.",
@@ -32,18 +34,27 @@ struct DictateView: View {
                             Text("No pending text").font(.title3.weight(.semibold)).foregroundStyle(Color.ink)
                             Text("Record here or start from your keyboard.").font(.subheadline).foregroundStyle(Color.inkSecondary)
                         }
+                        .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
-                        .padding(.top, 120)
+                        .frame(minHeight: micDenied || !speechReady || server.returnHint ? 160 : max(0, geometry.size.height - 48))
                     }
                 }
                 .padding(.horizontal, 20)
+                .padding(.vertical, 24)
+              }
             }
             .background(Color.paper)
             .navigationTitle("Dictate")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink { LanguageView() } label: {
-                        Text(DictationLocale.name).font(.subheadline).foregroundStyle(Color.ink)
+                        HStack(spacing: 6) {
+                            Text(DictationLocale.name)
+                            Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(Color.ink)
+                        .frame(minHeight: 44)
                     }
                 }
             }
@@ -94,7 +105,7 @@ struct DictateView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Pending text").font(.footnote).foregroundStyle(Color.inkSecondary)
             Text(pending.text)
-                .font(.system(size: 23))
+                .font(.system(size: resultSize))
                 .foregroundStyle(Color.ink)
                 .textSelection(.enabled)
                 .padding(16)
@@ -137,7 +148,10 @@ struct LanguageView: View {
             } footer: {
                 Text("Dictation uses your iPhone's language. Change it in Settings › General › Language & Region.")
             }
+            .listRowBackground(Color.surface)
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.paper)
         .navigationTitle("Language")
         .navigationBarTitleDisplayMode(.inline)
     }

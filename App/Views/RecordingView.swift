@@ -2,6 +2,7 @@ import SwiftUI
 
 /// H07 recording → H08 processing → H09 result with the correction diff.
 struct RecordingView: View {
+    @ScaledMetric(relativeTo: .title2) private var transcriptSize = 25
     let flow: HostDictation
     let model: ModelService
     var close: () -> Void
@@ -17,6 +18,8 @@ struct RecordingView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button { flow.cancel(); close() } label: { Image(systemName: "chevron.left") }
+                            .frame(minWidth: 44, minHeight: 44)
+                            .foregroundStyle(Color.ink)
                             .accessibilityLabel("Back")
                     }
                 }
@@ -61,7 +64,7 @@ struct RecordingView: View {
             }
             .padding(.top, 16)
             Text("Speak naturally. Say “sorry, I mean…” to correct yourself.")
-                .font(.system(size: 25)).foregroundStyle(Color.inkSecondary)
+                .font(.system(size: transcriptSize)).foregroundStyle(Color.inkSecondary)
             Spacer()
             Meter(levels: flow.levels).frame(height: 56)
             ZStack {
@@ -96,6 +99,7 @@ private struct Meter: View {
 }
 
 struct ResultView: View {
+    @ScaledMetric(relativeTo: .title2) private var resultSize = 23
     let pending: PendingDictation
     @State private var copied = false
 
@@ -104,7 +108,7 @@ struct ResultView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Ready to insert").font(.largeTitle.bold()).foregroundStyle(Color.ink)
                 Text(pending.text)
-                    .font(.system(size: 23))
+                    .font(.system(size: resultSize))
                     .foregroundStyle(Color.ink)
                     .textSelection(.enabled)
                     .padding(16)

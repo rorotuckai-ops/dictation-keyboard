@@ -25,6 +25,7 @@ struct SettingsView: View {
                     }
                     .disabled(!spokenCorrections)
                 }
+                .listRowBackground(Color.surface)
                 Section("Setup") {
                     NavigationLink { ModelsView() } label: {
                         row("Models", symbol: "folder", detail: model.status == .ready ? model.modelName : "Not added")
@@ -36,6 +37,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.keyboard")
                     NavigationLink { PrivacyView() } label: { row("Privacy", symbol: "lock", detail: nil) }
                 }
+                .listRowBackground(Color.surface)
                 Section("Preferences") {
                     Picker("Appearance", selection: $appearance) {
                         Text("System").tag("system")
@@ -44,7 +46,9 @@ struct SettingsView: View {
                     }
                     Toggle("Haptics", isOn: $haptics)
                 }
+                .listRowBackground(Color.surface)
             }
+            .toggleStyle(SwitchToggleStyle(tint: .accentInk))
             .scrollContentBackground(.hidden)
             .background(Color.paper)
             .navigationTitle("Settings")
@@ -102,6 +106,7 @@ struct ModelsView: View {
             } footer: {
                 Text("Gemma runs on this iPhone. Text never leaves it.")
             }
+            .listRowBackground(Color.surface)
             Section {
                 LabeledContent("Offline speech", value: speechReady ? "Installed" : "Not installed")
             } header: {
@@ -109,12 +114,15 @@ struct ModelsView: View {
             } footer: {
                 Text("Apple's on-device speech model for \(DictationLocale.name).")
             }
+            .listRowBackground(Color.surface)
             Section {
                 Toggle("Stay ready in background", isOn: $server.stayReady)
             } footer: {
                 Text("Keeps the app running so the keyboard's Fix works without switching apps.")
             }
+            .listRowBackground(Color.surface)
         }
+        .toggleStyle(SwitchToggleStyle(tint: .accentInk))
         .scrollContentBackground(.hidden)
         .background(Color.paper)
         .navigationTitle("Models")
@@ -156,6 +164,7 @@ struct KeyboardSetupView: View {
             } footer: {
                 Text("The keyboard needs Full Access for the microphone and to talk to this app.")
             }
+            .listRowBackground(Color.surface)
             Section("Speech on this iPhone") {
                 LabeledContent("Microphone", value: micAllowed ? "Allowed" : "Not allowed")
                 LabeledContent("Offline speech", value: speechReady ? "Installed" : "Not installed")
@@ -165,6 +174,7 @@ struct KeyboardSetupView: View {
                         .accessibilityIdentifier("host.prepareSpeech")
                 }
             }
+            .listRowBackground(Color.surface)
             Section("Test") {
                 TextField("Tap here and switch to Dictation Keyboard", text: $trial, axis: .vertical)
                     .lineLimit(2...5)
@@ -173,6 +183,7 @@ struct KeyboardSetupView: View {
                     .accessibilityIdentifier("host.applyCorrections")
                 if !trialResult.isEmpty { Text(trialResult).accessibilityIdentifier("host.result") }
             }
+            .listRowBackground(Color.surface)
         }
         .scrollContentBackground(.hidden)
         .background(Color.paper)
@@ -208,6 +219,7 @@ struct PrivacyView: View {
                 Text("Gemma cleans up text on this iPhone. Nothing is sent to a server.")
                 Text("No accounts, no analytics, no history of what you dictate.")
             }
+            .listRowBackground(Color.surface)
         }
         .scrollContentBackground(.hidden)
         .background(Color.paper)

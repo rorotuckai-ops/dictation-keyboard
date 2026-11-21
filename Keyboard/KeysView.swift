@@ -100,6 +100,10 @@ final class KeyButton: UIButton {
         addTarget(self, action: #selector(tapped), for: .touchUpInside)
     }
 
+    override var isHighlighted: Bool {
+        didSet { alpha = isHighlighted ? 0.6 : 1 }
+    }
+
     required init?(coder: NSCoder) { fatalError() }
 
     override func traitCollectionDidChange(_ previous: UITraitCollection?) {
