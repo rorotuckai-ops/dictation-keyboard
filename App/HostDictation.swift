@@ -19,6 +19,8 @@ final class HostDictation {
     private(set) var started = Date()
     private var recorder: AVAudioRecorder?
     private var meter: Timer?
+    /// Bumped by cancel so a transcription still running is dropped instead of saved.
+    private var generation = 0
     private let url = AppGroup.directory("audio").appendingPathComponent("host.wav")
 
     func start() async {
@@ -61,6 +63,7 @@ final class HostDictation {
     }
 
     func cancel() {
+        generation += 1
         stopRecorder()
         phase = .idle
     }
@@ -68,6 +71,7 @@ final class HostDictation {
     func stop(model: ModelService) async {
         stopRecorder()
         phase = .processing
+        let run = generation
         do {
             let raw: String
             #if DEBUG
@@ -82,14 +86,18 @@ final class HostDictation {
             #endif
             try? FileManager.default.removeItem(at: url)
             let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard run == generation else { return }
             guard !text.isEmpty else {
                 phase = .failed("No speech detected. Check the microphone and try again.")
                 return
             }
-            phase = .result(await correct(text, model: model))
-            if case .result(let pending) = phase { PendingDictation.current = pending }
+            let pending = await correct(text, model: model)
+            guard run == generation else { return }
+            phase = .result(pending)
+            PendingDictation.current = pending
         } catch {
             try? FileManager.default.removeItem(at: url)
+            guard run == generation else { return }
             phase = .failed(error.localizedDescription)
         }
     }
