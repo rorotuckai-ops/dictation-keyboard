@@ -333,12 +333,14 @@ final class KeyboardViewController: UIInputViewController {
 
         let proxy = textDocumentProxy
         let context = (proxy.documentContextBeforeInput ?? "") + (proxy.documentContextAfterInput ?? "")
-        let availableText = proxy.selectedText.flatMap { $0.isEmpty ? nil : $0 } ?? context
+        // Match run(_:): a whitespace-only selection falls back to adjacent context.
+        let selection = proxy.selectedText.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+        let availableText = selection ?? context
         let hasText = !availableText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         fixButton.isEnabled = state == .idle && hasText
         rewriteButton.isEnabled = state == .idle && hasText
-        fixButton.accessibilityLabel = proxy.selectedText?.isEmpty == false ? "Fix selected text" : "Fix available text"
-        rewriteButton.accessibilityLabel = proxy.selectedText?.isEmpty == false ? "Rewrite selected text" : "Rewrite available text"
+        fixButton.accessibilityLabel = selection != nil ? "Fix selected text" : "Fix available text"
+        rewriteButton.accessibilityLabel = selection != nil ? "Rewrite selected text" : "Rewrite available text"
         if let selected = proxy.selectedText, !selected.isEmpty {
             preview.text = selected
             preview.textColor = Palette.text
