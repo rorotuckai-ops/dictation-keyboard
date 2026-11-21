@@ -70,9 +70,13 @@ enum Bridge {
     }
 
     /// The host writes a heartbeat every second while it can serve requests in the background.
+    static var hostIsRunning: Bool {
+        Date().timeIntervalSince1970 - AppGroup.defaults.double(forKey: SharedKeys.hostHeartbeat) < 3
+    }
+
+    /// The host is running and has Gemma loaded.
     static var hostIsAlive: Bool {
-        let beat = AppGroup.defaults.double(forKey: SharedKeys.hostHeartbeat)
-        return Date().timeIntervalSince1970 - beat < 3 && AppGroup.defaults.bool(forKey: SharedKeys.modelReady)
+        hostIsRunning && AppGroup.defaults.bool(forKey: SharedKeys.modelReady)
     }
 
     static func post(_ name: String) {

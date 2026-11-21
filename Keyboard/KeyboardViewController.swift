@@ -242,7 +242,7 @@ final class KeyboardViewController: UIInputViewController {
                 // Speech can be unavailable inside the extension; the app transcribes the same clip.
                 NSLog("[DictKB] keyboard transcription failed: \(error)")
                 let path = String(clip.path.dropFirst(AppGroup.container.path.count + 1))
-                if Bridge.hostIsAlive, let raw = await self.askHost(.transcribe, text: path, timeout: 30), !raw.isEmpty {
+                if Bridge.hostIsRunning, let raw = await self.askHost(.transcribe, text: path, timeout: 30), !raw.isEmpty {
                     await self.insertDictation(raw)
                 } else {
                     self.state = .idle
@@ -379,7 +379,7 @@ final class KeyboardViewController: UIInputViewController {
             try? await Task.sleep(for: .milliseconds(150))
         }
         Bridge.cancel(request.id)
-        show("Gemma timed out")
+        show(task == .transcribe ? "The app didn't answer" : "Gemma timed out")
         return nil
     }
 
