@@ -164,6 +164,10 @@ final class ModelDownload: NSObject, URLSessionDownloadDelegate, @unchecked Send
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         do {
+            if let http = downloadTask.response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+                throw NSError(domain: "DictKB", code: http.statusCode, userInfo: [
+                    NSLocalizedDescriptionKey: "Download failed (HTTP \(http.statusCode))"])
+            }
             try? FileManager.default.removeItem(at: destination)
             try FileManager.default.moveItem(at: location, to: destination)
             onFinish?(nil)
