@@ -57,20 +57,16 @@ final class KeyboardViewController: UIInputViewController {
         render()
         // Opening the app doesn't take the keyboard's view off screen, so follow the text field's app instead.
         let center = NotificationCenter.default
-        center.addObserver(forName: .NSExtensionHostWillResignActive, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.hostInactive() }
-        }
-        center.addObserver(forName: .NSExtensionHostDidBecomeActive, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.hostActive() }
-        }
+        center.addObserver(self, selector: #selector(hostInactive), name: .NSExtensionHostWillResignActive, object: nil)
+        center.addObserver(self, selector: #selector(hostActive), name: .NSExtensionHostDidBecomeActive, object: nil)
     }
 
-    private func hostInactive() {
+    @objc private func hostInactive() {
         visible = false
         waitTask?.cancel()
     }
 
-    private func hostActive() {
+    @objc private func hostActive() {
         guard view.window != nil else { return }
         visible = true
         resumePendingEdit()
