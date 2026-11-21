@@ -31,7 +31,7 @@ final class HostDictation {
         levels = []
         started = Date()
         #if DEBUG
-        if DebugFixture.transcriptText != nil { phase = .recording; return }
+        if DebugFixture.transcriptText != nil || DebugFixture.audio != nil { phase = .recording; return }
         #endif
         do {
             let session = AVAudioSession.sharedInstance()
@@ -79,7 +79,7 @@ final class HostDictation {
                 try? await Task.sleep(for: .milliseconds(600))
                 raw = fixture
             } else {
-                raw = try await Transcriber.transcribe(url)
+                raw = try await Transcriber.transcribe(DebugFixture.audio ?? url)
             }
             #else
             raw = try await Transcriber.transcribe(url)

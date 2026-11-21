@@ -32,9 +32,15 @@ struct PendingDictation: Codable, Equatable {
 #if DEBUG
 /// Test hooks for the simulator, which has no microphone and can't run speech recognition:
 /// `<App Group>/fixtures/dictation.txt` stands in for the recognizer's output and
-/// `fixtures/dictation.wav` for the mic. The rest of the pipeline runs as normal.
+/// `fixtures/dictation.wav` for the mic (`DICTKB_TRANSCRIPT` and `DICTKB_AUDIO` override them from
+/// the launch environment). The rest of the pipeline runs as normal.
 enum DebugFixture {
-    static var audio: URL? { file("fixtures/dictation.wav") }
+    static var audio: URL? {
+        if let path = ProcessInfo.processInfo.environment["DICTKB_AUDIO"] {
+            return URL(fileURLWithPath: path)
+        }
+        return file("fixtures/dictation.wav")
+    }
     static var transcript: URL? { file("fixtures/dictation.txt") }
 
     static var transcriptText: String? {
