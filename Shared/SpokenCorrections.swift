@@ -7,6 +7,13 @@ struct CorrectionResult: Equatable {
     var text: String
     var applied: Int
     var needsModel: Bool
+    /// What each spoken correction replaced, in order ("Monday" → "Tuesday"), for the review diff.
+    var changes: [CorrectionChange] = []
+}
+
+struct CorrectionChange: Equatable, Codable, Hashable {
+    var from: String
+    var to: String
 }
 
 enum SpokenCorrections {
@@ -51,13 +58,18 @@ enum SpokenCorrections {
         var text = raw
         var applied = 0
         var needsModel = false
+        var changes: [CorrectionChange] = []
         for _ in 0..<20 {
             let delete = text.range(of: deletePattern, options: [.regularExpression, .caseInsensitive])
             let replace = text.range(of: replacePattern, options: [.regularExpression, .caseInsensitive])
             if let delete, replace == nil || delete.lowerBound <= replace!.lowerBound {
                 let before = String(text[..<delete.lowerBound])
                 let after = String(text[delete.upperBound...])
-                text = join(dropLastSentence(before), after)
+                let kept = dropLastSentence(before)
+                let removed = String(before.trimmingCharacters(in: .whitespacesAndNewlines).dropFirst(kept.count))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !removed.isEmpty { changes.append(CorrectionChange(from: removed, to: "")) }
+                text = join(kept, after)
                 applied += 1
             } else if let replace {
                 let before = String(text[..<replace.lowerBound])
@@ -72,26 +84,37 @@ enum SpokenCorrections {
                     text = join(before, rest)
                     continue
                 }
-                let (fixed, confident) = substitute(in: before, with: replacement)
+                let (fixed, confident, removed) = substituteTracked(in: before, with: replacement)
                 needsModel = needsModel || !confident
+                if !removed.isEmpty {
+                    let shown = removed.contains(" ") ? replacement : replacement.replacingOccurrences(
+                        of: "^(?:on |at |by |in )", with: "", options: [.regularExpression, .caseInsensitive])
+                    changes.append(CorrectionChange(from: removed, to: shown))
+                }
                 text = join(fixed, rest)
                 applied += 1
             } else {
                 break
             }
         }
-        return CorrectionResult(text: tidy(text), applied: applied, needsModel: needsModel)
+        return CorrectionResult(text: tidy(text), applied: applied, needsModel: needsModel, changes: changes)
     }
 
     /// Replaces the part of `before` the speaker meant to correct with `replacement`.
     static func substitute(in before: String, with replacement: String) -> (String, Bool) {
+        let (text, confident, _) = substituteTracked(in: before, with: replacement)
+        return (text, confident)
+    }
+
+    /// `substitute`, also returning the text that was replaced.
+    static func substituteTracked(in before: String, with replacement: String) -> (String, Bool, String) {
         var head = before.trimmingCharacters(in: .whitespacesAndNewlines)
         var terminator = ""
         while let last = head.last, ".!?,;:".contains(last) {
             if ".!?".contains(last) { terminator = String(last) }
             head.removeLast()
         }
-        guard !head.isEmpty else { return (replacement, false) }
+        guard !head.isEmpty else { return (replacement, false, "") }
 
         let bare = replacement.replacingOccurrences(of: "^(?:on |at |by |in )", with: "", options: [.regularExpression, .caseInsensitive])
         for pattern in classes where bare.range(of: "^" + pattern, options: [.regularExpression, .caseInsensitive]) != nil {
@@ -106,8 +129,9 @@ enum SpokenCorrections {
                         if end > target.upperBound { target = target.lowerBound..<end }
                     }
                 }
+                let removed = String(head[target])
                 head.replaceSubrange(target, with: bare)
-                return (head + terminator, true)
+                return (head + terminator, true, removed)
             }
         }
 
@@ -120,9 +144,10 @@ enum SpokenCorrections {
             confident = words[words.count - count].lowercased() == replacementWords[0].lowercased()
         }
         if replacementWords.count > 4 { confident = false }
+        let removed = words.suffix(count).joined(separator: " ")
         words.removeLast(count)
         words.append(replacement)
-        return (words.joined(separator: " ") + terminator, confident)
+        return (words.joined(separator: " ") + terminator, confident, removed)
     }
 
     private static func lastMatch(of pattern: String, in text: String) -> Range<String.Index>? {

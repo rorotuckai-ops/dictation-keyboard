@@ -122,6 +122,21 @@ final class ModelService {
         download.start()
     }
 
+    /// Deletes the model files from Documents; dictation keeps working without cleanup.
+    func removeModel() {
+        engine = nil
+        for file in (try? FileManager.default.contentsOfDirectory(at: Self.modelsDirectory, includingPropertiesForKeys: nil)) ?? []
+        where file.pathExtension == "litertlm" { try? FileManager.default.removeItem(at: file) }
+        modelURL = Self.findModel()
+        status = .missing
+        AppGroup.defaults.set(false, forKey: SharedKeys.modelReady)
+    }
+
+    var modelSize: String? {
+        guard let modelURL, let size = try? modelURL.resourceValues(forKeys: [.fileSizeKey]).fileSize else { return nil }
+        return ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+    }
+
     func importModel(from url: URL) async {
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }

@@ -11,9 +11,11 @@ no accounts, no servers.
   "no wait, make it 5pm" are applied by rules in the keyboard
   ([`SpokenCorrections.swift`](Shared/SpokenCorrections.swift)). Cases the rules can't resolve
   confidently go to Gemma in the host app.
-- **Fix button**: sends the selected text (or the text around the cursor) to Gemma in the host
-  app, which fixes grammar, punctuation and filler words. **Rewrite** mode rewrites it instead.
-  The result replaces the original.
+- **Fix text / Rewrite**: send the selected text (or the text around the cursor) to Gemma in the
+  host app. Fix cleans up grammar, punctuation and filler words; Rewrite rewrites it. The result
+  replaces the original only if the text hasn't changed meanwhile, and **Undo** puts it back.
+- **Record in the app**: the app's Dictate tab records too. The result screen shows what each
+  spoken correction changed (Monday → Tuesday); tap **Insert** on the keyboard to place it.
 - **Gemma, offline**: Gemma 4 E2B (`.litertlm`) runs in the host app with
   [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM). The keyboard and the app talk through
   files in a shared App Group. With **Stay ready in background** on, the app keeps running in the

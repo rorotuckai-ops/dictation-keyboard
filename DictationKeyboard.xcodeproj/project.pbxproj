@@ -9,31 +9,39 @@
 /* Begin PBXBuildFile section */
 		007D299ACA27719CA1CF332E /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7790DD64AF6F5866DF19D81 /* Prompts.swift */; };
 		02B705555A02459723156CEC /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 993A22A625B6CB846CC2FE7A /* KeyboardViewController.swift */; };
+		053DD552CA662BC530C97E3A /* HostDictation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B11E09AEAF1328A772F7163 /* HostDictation.swift */; };
 		0FB0D14DEC07D456420B3978 /* DictKBApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91D22E791256491E6B68E35B /* DictKBApp.swift */; };
 		1AAD205D7E491EE80F6FDD3F /* KeysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91B2A4BE0C4F7A878F4206D /* KeysView.swift */; };
 		1B4DCCD3942EE4D3D42D32A8 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2AE188024ACF3BF80B8FEB /* AppGroup.swift */; };
 		1FEAC81FC9E60BFA5130C5F2 /* ModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F73301E63D84C4AAAC7CD75 /* ModelService.swift */; };
 		2520EC462FFECD9EEDA175D9 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2AE188024ACF3BF80B8FEB /* AppGroup.swift */; };
 		2A73FB17803E812F9330EAB9 /* Transcriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E1D9B14552BA506379AB35 /* Transcriber.swift */; };
+		2D5F0DD03AD787C4BCDCFB05 /* DictateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EF1E80E0BD84D4380AC6FC /* DictateView.swift */; };
 		30E6A95AEF7C1E0DF0D8A522 /* SpokenCorrectionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527A1DE109223DDB3287D2C5 /* SpokenCorrectionsTests.swift */; };
 		31E985BE67CDE56A82EF43EF /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7790DD64AF6F5866DF19D81 /* Prompts.swift */; };
+		321250DCC2E5B604E47CF578 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EBD6053D4F29052F0B6A026 /* Theme.swift */; };
 		36039476C0C828EA7E56CCBA /* DictationKeyboardExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 929A0A71F0E7EA7A0EB5F29D /* DictationKeyboardExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4DC21EA6F73E48616B5D9BF2 /* MicCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8C807DA01D105AB1948325C /* MicCapture.swift */; };
+		5875C456EA1313834C6D4F83 /* PendingDictation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7DE65A9B9F8D819920561DF /* PendingDictation.swift */; };
 		63FA9EF2F9FA3FAF42308B1B /* SpokenCorrections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386737CA0FCF847C212F0389 /* SpokenCorrections.swift */; };
+		69F1F83977A4891047D01831 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A2ECD7713F45E224ED3AFA3 /* RecordingView.swift */; };
 		6A7A03FBE60D252B71ED061F /* Transcriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E1D9B14552BA506379AB35 /* Transcriber.swift */; };
 		6AF04383434697AD7A72AC40 /* WAVFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154BE2A406048C876EF6F659 /* WAVFile.swift */; };
 		7B957AF7C22A5973EF79C3AA /* BridgeServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B677E852A0FF846EBD5F278D /* BridgeServer.swift */; };
 		7BB17230C25379304B435F54 /* LiteRTLM in Frameworks */ = {isa = PBXBuildFile; productRef = F604C72CE5EFEFC1454389CC /* LiteRTLM */; };
 		84318730CCDD87F1788F12D3 /* SpokenCorrections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386737CA0FCF847C212F0389 /* SpokenCorrections.swift */; };
 		85F827E50037032C9084AE0A /* HostAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30D09B0DC4AF323B3DBC6DCB /* HostAppUITests.swift */; };
+		97CDB4C9EACE3FBA2F7F83FA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85189728E48B461E7F68D197 /* SettingsView.swift */; };
 		98DE96695265426D5A49BBDB /* SpokenCorrections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386737CA0FCF847C212F0389 /* SpokenCorrections.swift */; };
 		990C29A0AF007A91FD76533A /* HostAppOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD766497FCD860A1FB0C485 /* HostAppOpener.swift */; };
 		A1B83D3BE819801E938EF0F8 /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7790DD64AF6F5866DF19D81 /* Prompts.swift */; };
 		BB747EF6C9ACDEDE575776A6 /* WAVFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154BE2A406048C876EF6F659 /* WAVFile.swift */; };
 		C2BECEB2F790DD04F1613A14 /* Bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDCB272B0BBA11F1B609983 /* Bridge.swift */; };
+		D03A4C7FF2254FFE41F36FE5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EBD6053D4F29052F0B6A026 /* Theme.swift */; };
+		D0B2DAE6904EF8C478627867 /* PendingDictation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7DE65A9B9F8D819920561DF /* PendingDictation.swift */; };
+		D25BCFCEFA523C5C663B9D3D /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BB2C768CC59A3717F50FDD6 /* RootView.swift */; };
 		DB14350B5564641400746D65 /* Bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDCB272B0BBA11F1B609983 /* Bridge.swift */; };
 		EAB833689288144471730B5A /* Bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDCB272B0BBA11F1B609983 /* Bridge.swift */; };
-		FBBE42C729C3632EEF02509C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E3D900CB9988EC54645962 /* ContentView.swift */; };
 		FC9D82D0DA2417FD11DE0A63 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2AE188024ACF3BF80B8FEB /* AppGroup.swift */; };
 /* End PBXBuildFile section */
 
@@ -74,23 +82,29 @@
 		1F73301E63D84C4AAAC7CD75 /* ModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelService.swift; sourceTree = "<group>"; };
 		30D09B0DC4AF323B3DBC6DCB /* HostAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostAppUITests.swift; sourceTree = "<group>"; };
 		386737CA0FCF847C212F0389 /* SpokenCorrections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpokenCorrections.swift; sourceTree = "<group>"; };
+		3A2ECD7713F45E224ED3AFA3 /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
 		3AD766497FCD860A1FB0C485 /* HostAppOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostAppOpener.swift; sourceTree = "<group>"; };
 		3BF46099945F9346E7C701C2 /* DictationKeyboardUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DictationKeyboardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		527A1DE109223DDB3287D2C5 /* SpokenCorrectionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpokenCorrectionsTests.swift; sourceTree = "<group>"; };
+		5EBD6053D4F29052F0B6A026 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		6167C22461239229F4079948 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
+		6B11E09AEAF1328A772F7163 /* HostDictation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostDictation.swift; sourceTree = "<group>"; };
 		718BC7CCF8E1A46F7DBE0671 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		85189728E48B461E7F68D197 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		8BB2C768CC59A3717F50FDD6 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		91D22E791256491E6B68E35B /* DictKBApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictKBApp.swift; sourceTree = "<group>"; };
 		929A0A71F0E7EA7A0EB5F29D /* DictationKeyboardExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = DictationKeyboardExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		993A22A625B6CB846CC2FE7A /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
 		9E09FBB0D87A9414B86F3135 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A5E1D9B14552BA506379AB35 /* Transcriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transcriber.swift; sourceTree = "<group>"; };
+		A7DE65A9B9F8D819920561DF /* PendingDictation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingDictation.swift; sourceTree = "<group>"; };
 		B1A6A5533992DBBBD9A5D80D /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		B677E852A0FF846EBD5F278D /* BridgeServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeServer.swift; sourceTree = "<group>"; };
 		BC2AE188024ACF3BF80B8FEB /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		C7790DD64AF6F5866DF19D81 /* Prompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompts.swift; sourceTree = "<group>"; };
 		CCDCB272B0BBA11F1B609983 /* Bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bridge.swift; sourceTree = "<group>"; };
 		D05A224985C3FF715F61BE7C /* DictationKeyboard.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DictationKeyboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D2E3D900CB9988EC54645962 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		D0EF1E80E0BD84D4380AC6FC /* DictateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictateView.swift; sourceTree = "<group>"; };
 		E8C807DA01D105AB1948325C /* MicCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicCapture.swift; sourceTree = "<group>"; };
 		E91B2A4BE0C4F7A878F4206D /* KeysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysView.swift; sourceTree = "<group>"; };
 		FD3B8BB4B50BC4521F5DA31B /* Keyboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Keyboard.entitlements; sourceTree = "<group>"; };
@@ -113,8 +127,10 @@
 			children = (
 				BC2AE188024ACF3BF80B8FEB /* AppGroup.swift */,
 				CCDCB272B0BBA11F1B609983 /* Bridge.swift */,
+				A7DE65A9B9F8D819920561DF /* PendingDictation.swift */,
 				C7790DD64AF6F5866DF19D81 /* Prompts.swift */,
 				386737CA0FCF847C212F0389 /* SpokenCorrections.swift */,
+				5EBD6053D4F29052F0B6A026 /* Theme.swift */,
 				A5E1D9B14552BA506379AB35 /* Transcriber.swift */,
 				154BE2A406048C876EF6F659 /* WAVFile.swift */,
 			);
@@ -126,10 +142,11 @@
 			children = (
 				B1A6A5533992DBBBD9A5D80D /* App.entitlements */,
 				B677E852A0FF846EBD5F278D /* BridgeServer.swift */,
-				D2E3D900CB9988EC54645962 /* ContentView.swift */,
 				91D22E791256491E6B68E35B /* DictKBApp.swift */,
+				6B11E09AEAF1328A772F7163 /* HostDictation.swift */,
 				9E09FBB0D87A9414B86F3135 /* Info.plist */,
 				1F73301E63D84C4AAAC7CD75 /* ModelService.swift */,
+				624CFC574AD54DA6870A557F /* Views */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -145,6 +162,17 @@
 				E8C807DA01D105AB1948325C /* MicCapture.swift */,
 			);
 			path = Keyboard;
+			sourceTree = "<group>";
+		};
+		624CFC574AD54DA6870A557F /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				D0EF1E80E0BD84D4380AC6FC /* DictateView.swift */,
+				3A2ECD7713F45E224ED3AFA3 /* RecordingView.swift */,
+				8BB2C768CC59A3717F50FDD6 /* RootView.swift */,
+				85189728E48B461E7F68D197 /* SettingsView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		713600F9D6BF5EDB5F66252A /* Config */ = {
@@ -363,8 +391,10 @@
 				02B705555A02459723156CEC /* KeyboardViewController.swift in Sources */,
 				1AAD205D7E491EE80F6FDD3F /* KeysView.swift in Sources */,
 				4DC21EA6F73E48616B5D9BF2 /* MicCapture.swift in Sources */,
+				D0B2DAE6904EF8C478627867 /* PendingDictation.swift in Sources */,
 				A1B83D3BE819801E938EF0F8 /* Prompts.swift in Sources */,
 				98DE96695265426D5A49BBDB /* SpokenCorrections.swift in Sources */,
+				D03A4C7FF2254FFE41F36FE5 /* Theme.swift in Sources */,
 				6A7A03FBE60D252B71ED061F /* Transcriber.swift in Sources */,
 				6AF04383434697AD7A72AC40 /* WAVFile.swift in Sources */,
 			);
@@ -377,11 +407,17 @@
 				2520EC462FFECD9EEDA175D9 /* AppGroup.swift in Sources */,
 				EAB833689288144471730B5A /* Bridge.swift in Sources */,
 				7B957AF7C22A5973EF79C3AA /* BridgeServer.swift in Sources */,
-				FBBE42C729C3632EEF02509C /* ContentView.swift in Sources */,
 				0FB0D14DEC07D456420B3978 /* DictKBApp.swift in Sources */,
+				2D5F0DD03AD787C4BCDCFB05 /* DictateView.swift in Sources */,
+				053DD552CA662BC530C97E3A /* HostDictation.swift in Sources */,
 				1FEAC81FC9E60BFA5130C5F2 /* ModelService.swift in Sources */,
+				5875C456EA1313834C6D4F83 /* PendingDictation.swift in Sources */,
 				31E985BE67CDE56A82EF43EF /* Prompts.swift in Sources */,
+				69F1F83977A4891047D01831 /* RecordingView.swift in Sources */,
+				D25BCFCEFA523C5C663B9D3D /* RootView.swift in Sources */,
+				97CDB4C9EACE3FBA2F7F83FA /* SettingsView.swift in Sources */,
 				84318730CCDD87F1788F12D3 /* SpokenCorrections.swift in Sources */,
+				321250DCC2E5B604E47CF578 /* Theme.swift in Sources */,
 				2A73FB17803E812F9330EAB9 /* Transcriber.swift in Sources */,
 				BB747EF6C9ACDEDE575776A6 /* WAVFile.swift in Sources */,
 			);
