@@ -62,7 +62,11 @@ final class BridgeServer {
             let started = Date()
             var response = BridgeResponse(id: request.id, text: nil, error: nil, seconds: 0)
             do {
-                response.text = try await ModelService.shared.run(request.task, text: request.text)
+                if request.task == .transcribe {
+                    response.text = try await Transcriber.transcribe(AppGroup.container.appendingPathComponent(request.text))
+                } else {
+                    response.text = try await ModelService.shared.run(request.task, text: request.text)
+                }
             } catch {
                 response.error = error.localizedDescription
             }

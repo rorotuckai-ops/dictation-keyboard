@@ -174,9 +174,9 @@ final class KeyboardViewController: UIInputViewController {
             return
         }
         #if DEBUG
-        if let fixture = DebugFixture.audio {
+        if let fixture = DebugFixture.transcript ?? DebugFixture.audio {
             state = .listening
-            show("Listening… (test clip)")
+            show(fixture.pathExtension == "txt" ? "Listening… (test transcript)" : "Listening… (test clip)")
             fixtureClip = fixture
             return
         }
@@ -229,12 +229,25 @@ final class KeyboardViewController: UIInputViewController {
         guard let clip else { state = .idle; return }
         state = .transcribing
         Task { @MainActor in
+            #if DEBUG
+            if clip.pathExtension == "txt", let raw = try? String(contentsOf: clip, encoding: .utf8) {
+                await self.insertDictation(raw.trimmingCharacters(in: .whitespacesAndNewlines))
+                return
+            }
+            #endif
             do {
                 let raw = try await Transcriber.transcribe(clip)
                 await self.insertDictation(raw)
             } catch {
-                self.state = .idle
-                self.show(error.localizedDescription)
+                // Speech can be unavailable inside the extension; the app transcribes the same clip.
+                NSLog("[DictKB] keyboard transcription failed: \(error)")
+                let path = String(clip.path.dropFirst(AppGroup.container.path.count + 1))
+                if Bridge.hostIsAlive, let raw = await self.askHost(.transcribe, text: path, timeout: 30), !raw.isEmpty {
+                    await self.insertDictation(raw)
+                } else {
+                    self.state = .idle
+                    self.show(error.localizedDescription)
+                }
             }
         }
     }
@@ -398,6 +411,13 @@ final class KeyboardViewController: UIInputViewController {
 enum DebugFixture {
     static var audio: URL? {
         let url = AppGroup.container.appendingPathComponent("fixtures/dictation.wav")
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    /// The simulator's speech service can't run recognition, so `fixtures/dictation.txt` stands in
+    /// for the recognizer's output; the rest of the pipeline (corrections, insertion) runs as normal.
+    static var transcript: URL? {
+        let url = AppGroup.container.appendingPathComponent("fixtures/dictation.txt")
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 }

@@ -21,6 +21,8 @@ enum Prompts {
             Text:
             \(text)
             """
+        case .transcribe:
+            return text
         case .correct:
             return """
             The text below was dictated. The speaker corrected themselves while talking \

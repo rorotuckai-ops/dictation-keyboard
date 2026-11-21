@@ -7,6 +7,8 @@ enum BridgeTask: String, Codable, Sendable {
     case fix
     case rewrite
     case correct
+    /// `text` is a clip's path inside the App Group; the host transcribes it.
+    case transcribe
 }
 
 struct BridgeRequest: Codable, Sendable, Equatable {
