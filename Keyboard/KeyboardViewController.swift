@@ -349,7 +349,6 @@ final class KeyboardViewController: UIInputViewController {
         guard let ready = hostDictation else { render(); return }
         PendingDictation.current = nil
         insert(dictated: ready.text)
-        lastEdit = (original: "", result: ready.text)
         show("Inserted")
         feedback(.success)
     }

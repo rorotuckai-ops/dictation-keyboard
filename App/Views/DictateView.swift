@@ -4,6 +4,7 @@ import SwiftUI
 struct DictateView: View {
     @Environment(ModelService.self) private var model
     @Environment(BridgeServer.self) private var server
+    @Environment(\.scenePhase) private var scenePhase
     @State private var flow = HostDictation()
     @State private var recording = false
     @State private var pending = PendingDictation.current
@@ -64,6 +65,7 @@ struct DictateView: View {
             }
             .task { await checkSpeech() }
             .onAppear(perform: refresh)
+            .onChange(of: scenePhase) { _, phase in if phase == .active { refresh() } }
         }
     }
 

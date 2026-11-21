@@ -67,6 +67,8 @@ struct ModelsView: View {
     @Environment(ModelService.self) private var model
     @Environment(BridgeServer.self) private var server
     @State private var importing = false
+    @State private var confirmRemove = false
+    @State private var speechReady = false
 
     var body: some View {
         @Bindable var server = server
@@ -75,6 +77,10 @@ struct ModelsView: View {
                 switch model.status {
                 case .ready:
                     LabeledContent(model.modelName, value: "Ready").accessibilityIdentifier("host.modelReady")
+                    if let size = model.modelSize { LabeledContent("Size", value: size) }
+                    Button("Replace from Files") { importing = true }
+                    Button("Remove model", role: .destructive) { confirmRemove = true }
+                        .accessibilityIdentifier("host.removeModel")
                 case .loading:
                     HStack { ProgressView(); Text("Loading \(model.modelName)…") }
                 case .downloading(let progress):
@@ -97,6 +103,13 @@ struct ModelsView: View {
                 Text("Gemma runs on this iPhone. Text never leaves it.")
             }
             Section {
+                LabeledContent("Offline speech", value: speechReady ? "Installed" : "Not installed")
+            } header: {
+                Text("Speech")
+            } footer: {
+                Text("Apple's on-device speech model for \(DictationLocale.name).")
+            }
+            Section {
                 Toggle("Stay ready in background", isOn: $server.stayReady)
             } footer: {
                 Text("Keeps the app running so the keyboard's Fix works without switching apps.")
@@ -106,6 +119,12 @@ struct ModelsView: View {
         .background(Color.paper)
         .navigationTitle("Models")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Remove \(model.modelName)?", isPresented: $confirmRemove, titleVisibility: .visible) {
+            Button("Remove model", role: .destructive) { model.removeModel() }
+        } message: {
+            Text("Fix and Rewrite stop working until you add a model again. Dictation keeps working.")
+        }
+        .task { speechReady = await Transcriber.assetsInstalled() }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { Task { await model.importModel(from: url) } }
         }
