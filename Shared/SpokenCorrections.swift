@@ -95,7 +95,17 @@ enum SpokenCorrections {
 
         let bare = replacement.replacingOccurrences(of: "^(?:on |at |by |in )", with: "", options: [.regularExpression, .caseInsensitive])
         for pattern in classes where bare.range(of: "^" + pattern, options: [.regularExpression, .caseInsensitive]) != nil {
-            if let target = lastMatch(of: pattern, in: head) {
+            if var target = lastMatch(of: pattern, in: head) {
+                // "Monday at noon, sorry I mean Tuesday at 1pm": later values the replacement
+                // also restates are part of what it supersedes.
+                let tail = String(bare[(bare.range(of: "^" + pattern, options: [.regularExpression, .caseInsensitive])!.upperBound)...])
+                for other in classes where tail.range(of: other, options: [.regularExpression, .caseInsensitive]) != nil {
+                    let afterTarget = String(head[target.upperBound...])
+                    if let later = lastMatch(of: other, in: afterTarget) {
+                        let end = head.index(target.upperBound, offsetBy: afterTarget.distance(from: afterTarget.startIndex, to: later.upperBound))
+                        if end > target.upperBound { target = target.lowerBound..<end }
+                    }
+                }
                 head.replaceSubrange(target, with: bare)
                 return (head + terminator, true)
             }
