@@ -128,9 +128,12 @@ final class ModelService {
         let destination = Self.modelsDirectory.appendingPathComponent(url.lastPathComponent)
         do {
             if url.standardizedFileURL != destination.standardizedFileURL {
+                let partial = destination.appendingPathExtension("partial")
+                try? FileManager.default.removeItem(at: partial)
+                try FileManager.default.copyItem(at: url, to: partial)
                 for old in (try? FileManager.default.contentsOfDirectory(at: Self.modelsDirectory, includingPropertiesForKeys: nil)) ?? []
                 where old.pathExtension == "litertlm" { try? FileManager.default.removeItem(at: old) }
-                try FileManager.default.copyItem(at: url, to: destination)
+                try FileManager.default.moveItem(at: partial, to: destination)
             }
             engine = nil
             await loadIfPossible()
