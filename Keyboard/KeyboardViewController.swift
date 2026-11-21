@@ -292,6 +292,7 @@ final class KeyboardViewController: UIInputViewController {
         micButton.configuration?.image = UIImage(systemName: listening ? "stop.fill" : "mic.fill")
         micButton.accessibilityLabel = listening ? "Stop dictation" : "Start dictation"
         micButton.isEnabled = state == .idle || listening
+        micButton.configuration?.showsActivityIndicator = state != .idle && !listening
         fixButton.isEnabled = state == .idle
         rewriteButton.isEnabled = state == .idle
 
