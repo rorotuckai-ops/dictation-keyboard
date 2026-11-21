@@ -28,6 +28,7 @@ final class SpokenCorrectionsTests: XCTestCase {
 
     func testDeleteSentenceWithDecimals() {
         XCTAssertEqual(fix("Hi there. It costs 4.50 at 5 p.m. today. Delete the last sentence."), "Hi there.")
+        XCTAssertEqual(fix("Arrive at 5 p.m. Bring cake. Delete the last sentence."), "Arrive at 5 p.m.")
     }
 
     func testScratchThat() {

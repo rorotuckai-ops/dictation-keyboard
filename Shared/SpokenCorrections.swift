@@ -135,8 +135,10 @@ enum SpokenCorrections {
     static func dropLastSentence(_ text: String) -> String {
         var head = text.trimmingCharacters(in: .whitespacesAndNewlines)
         while let last = head.last, ".!?,;:".contains(last) { head.removeLast() }
-        // A sentence ends at . ! ? before whitespace, so "4.50" stays whole, and not after "p.m" or "Dr".
-        let boundary = #"(?<!\b(?:[ap]\.m|e\.g|i\.e|Mr|Mrs|Ms|Dr|St|vs|etc))\.(?=\s)|[!?](?=\s)|\n"#
+        // A sentence ends at . ! ? before whitespace, so "4.50" stays whole. After "Dr" it never ends;
+        // after "p.m" or "etc" it ends only when a capitalised word follows.
+        let boundary = #"(?<!\b(?:[ap]\.m|e\.g|i\.e|Mr|Mrs|Ms|Dr|St|vs|etc))\.(?=\s)"#
+            + #"|(?<=\b(?:[ap]\.m|etc))\.(?=\s+(?-i:[A-Z]))|[!?](?=\s)|\n"#
         guard let end = lastMatch(of: boundary, in: head) else { return "" }
         return String(head[..<end.upperBound])
     }
