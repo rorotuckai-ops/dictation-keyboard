@@ -159,6 +159,7 @@ final class KeyboardViewController: UIInputViewController {
         insert.title = "Insert"
         insert.baseBackgroundColor = Palette.accent
         insert.baseForegroundColor = Palette.onAccent
+        insert.cornerStyle = .fixed
         insert.background.cornerRadius = 9
         insert.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
         insertButton.configuration = insert
@@ -289,6 +290,7 @@ final class KeyboardViewController: UIInputViewController {
         config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
         config.baseBackgroundColor = Palette.surface
         config.baseForegroundColor = Palette.text
+        config.cornerStyle = .fixed
         config.background.cornerRadius = 9
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer {
             var a = $0; a.font = .systemFont(ofSize: 15, weight: .medium); return a
@@ -301,6 +303,8 @@ final class KeyboardViewController: UIInputViewController {
     private func utility(_ button: UIButton, symbol: String, id: String, label: String) {
         var config = UIButton.Configuration.plain()
         config.image = UIImage(systemName: symbol)
+        // Utility targets stay 44 pt; do not inherit an AX-sized button title font.
+        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
         config.baseForegroundColor = Palette.text
         button.configuration = config
         button.accessibilityIdentifier = id
