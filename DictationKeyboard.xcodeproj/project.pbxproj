@@ -14,6 +14,7 @@
 		1AAD205D7E491EE80F6FDD3F /* KeysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91B2A4BE0C4F7A878F4206D /* KeysView.swift */; };
 		1B4DCCD3942EE4D3D42D32A8 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2AE188024ACF3BF80B8FEB /* AppGroup.swift */; };
 		1FEAC81FC9E60BFA5130C5F2 /* ModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F73301E63D84C4AAAC7CD75 /* ModelService.swift */; };
+		250BB4C9FE6EF0ED1D32BBDD /* ColdFixUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B14D92482815F051CBD91F4 /* ColdFixUITests.swift */; };
 		2520EC462FFECD9EEDA175D9 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2AE188024ACF3BF80B8FEB /* AppGroup.swift */; };
 		2A73FB17803E812F9330EAB9 /* Transcriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E1D9B14552BA506379AB35 /* Transcriber.swift */; };
 		2D5F0DD03AD787C4BCDCFB05 /* DictateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0EF1E80E0BD84D4380AC6FC /* DictateView.swift */; };
@@ -86,6 +87,7 @@
 		3AD766497FCD860A1FB0C485 /* HostAppOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostAppOpener.swift; sourceTree = "<group>"; };
 		3BF46099945F9346E7C701C2 /* DictationKeyboardUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DictationKeyboardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		527A1DE109223DDB3287D2C5 /* SpokenCorrectionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpokenCorrectionsTests.swift; sourceTree = "<group>"; };
+		5B14D92482815F051CBD91F4 /* ColdFixUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColdFixUITests.swift; sourceTree = "<group>"; };
 		5EBD6053D4F29052F0B6A026 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		6167C22461239229F4079948 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		6B11E09AEAF1328A772F7163 /* HostDictation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostDictation.swift; sourceTree = "<group>"; };
@@ -217,6 +219,7 @@
 		CAF001A5AF8A40353058AE38 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				5B14D92482815F051CBD91F4 /* ColdFixUITests.swift */,
 				30D09B0DC4AF323B3DBC6DCB /* HostAppUITests.swift */,
 			);
 			path = UI;
@@ -365,6 +368,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				250BB4C9FE6EF0ED1D32BBDD /* ColdFixUITests.swift in Sources */,
 				85F827E50037032C9084AE0A /* HostAppUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
