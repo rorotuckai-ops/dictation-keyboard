@@ -1,0 +1,72 @@
+name: DictationKeyboard
+options:
+  bundleIdPrefix: $(BUNDLE_ID_PREFIX)
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+packages:
+  LiteRTLM:
+    url: https://github.com/google-ai-edge/LiteRT-LM.git
+    exactVersion: 0.19.1
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+targets:
+  DictationKeyboard:
+    type: application
+    platform: iOS
+    sources: [App, Shared]
+    dependencies:
+      - target: DictationKeyboardExtension
+      - package: LiteRTLM
+        product: LiteRTLM
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX)
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/App.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+  DictationKeyboardExtension:
+    type: app-extension
+    platform: iOS
+    sources: [Keyboard, Shared/AppGroup.swift, Shared/Bridge.swift, Shared/SpokenCorrections.swift, Shared/Transcriber.swift, Shared/WAVFile.swift, Shared/Prompts.swift]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).keyboard
+        PRODUCT_NAME: DictationKeyboardExtension
+        INFOPLIST_FILE: Keyboard/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Keyboard/Keyboard.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        APPLICATION_EXTENSION_API_ONLY: YES
+  DictationKeyboardTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests/Unit, Shared/SpokenCorrections.swift, Shared/Prompts.swift, Shared/Bridge.swift, Shared/AppGroup.swift]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).tests
+  DictationKeyboardUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests/UI]
+    dependencies:
+      - target: DictationKeyboard
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: DictationKeyboard
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).uitests
+schemes:
+  DictationKeyboard:
+    build:
+      targets:
+        DictationKeyboard: all
+    test:
+      targets: [DictationKeyboardTests, DictationKeyboardUITests]
