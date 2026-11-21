@@ -102,7 +102,10 @@ final class ModelService {
             Task { @MainActor in
                 guard let self else { return }
                 self.download = nil
-                if let error { self.status = .failed(error.localizedDescription) } else { await self.loadIfPossible() }
+                if let error { self.status = .failed(error.localizedDescription) } else {
+                    self.status = .missing
+                    await self.loadIfPossible()
+                }
             }
         }
         download.start()
