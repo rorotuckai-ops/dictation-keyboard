@@ -361,13 +361,15 @@ final class KeyboardViewController: UIInputViewController {
 
     @objc private func undoTapped() {
         guard let edit = lastEdit else { return }
-        lastEdit = nil
         let before = textDocumentProxy.documentContextBeforeInput ?? ""
-        guard before.hasSuffix(edit.result) else {
+        // The host only shares a window of text before the cursor, so a long result may show only its tail.
+        let inPlace = before.hasSuffix(edit.result) || (!before.isEmpty && edit.result.hasSuffix(before))
+        guard (textDocumentProxy.selectedText ?? "").isEmpty, inPlace else {
             show("Text changed; nothing undone")
             feedback(.warning)
             return
         }
+        lastEdit = nil
         for _ in 0..<edit.result.count { textDocumentProxy.deleteBackward() }
         textDocumentProxy.insertText(edit.original)
         show("Undone")
