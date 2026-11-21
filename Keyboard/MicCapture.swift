@@ -103,6 +103,7 @@ final class MicCapture: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMe
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: {
           echoCancellation: false, noiseSuppression: true, autoGainControl: true, channelCount: 1 } });
+        if (!running) { stream.getTracks().forEach(t => t.stop()); stream = null; return; }
         ctx = new AudioContext();
         await ctx.resume();
         source = ctx.createMediaStreamSource(stream);
