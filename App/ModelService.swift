@@ -148,7 +148,12 @@ final class ModelDownload: NSObject, URLSessionDownloadDelegate, @unchecked Send
     var onFinish: ((Error?) -> Void)?
     private let source: URL
     private let destination: URL
-    private lazy var session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+    private lazy var session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.allowsCellularAccess = false
+        config.waitsForConnectivity = true
+        return URLSession(configuration: config, delegate: self, delegateQueue: nil)
+    }()
 
     init(from source: URL, to destination: URL) {
         self.source = source
