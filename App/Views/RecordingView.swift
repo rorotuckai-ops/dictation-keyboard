@@ -130,7 +130,7 @@ struct ResultView: View {
             }
             .padding(.top, 8)
         }
-        .scrollEdgeEffectStyle(.soft, for: .bottom)
+        .scrollEdgeEffectStyle(.hard, for: .bottom)
         .safeAreaBar(edge: .bottom, spacing: 0) {
             VStack(spacing: 12) {
                 Text("Switch back to your app, then tap Insert.").font(.footnote).foregroundStyle(Color.inkSecondary)
@@ -141,6 +141,7 @@ struct ResultView: View {
             }
             .padding(.top, 12)
             .padding(.bottom, 16)
+            .background(Color.paper.ignoresSafeArea(edges: .bottom))
         }
     }
 }
