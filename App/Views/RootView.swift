@@ -5,10 +5,10 @@ struct RootView: View {
 
     var body: some View {
         TabView {
-            Tab("Dictate", systemImage: "mic") { DictateView() }
-            Tab("Settings", systemImage: "slider.horizontal.3") { SettingsView() }
+            Tab("Dictate", systemImage: "mic") { DictateView().tint(.ink) }
+            Tab("Settings", systemImage: "slider.horizontal.3") { SettingsView().tint(.ink) }
         }
-        .tint(.accentInk)
+        .tint(.ink)
         .preferredColorScheme(appearance == "light" ? .light : appearance == "dark" ? .dark : nil)
     }
 }
@@ -51,6 +51,8 @@ struct PrimaryButton: View {
     var body: some View {
         Button(action: action) {
             Label { Text(title).fontWeight(.semibold) } icon: { if let symbol { Image(systemName: symbol) } }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .foregroundStyle(Color.onAccent)
                 .background(Color.accentInk, in: RoundedRectangle(cornerRadius: 12))

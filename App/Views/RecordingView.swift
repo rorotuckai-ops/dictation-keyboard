@@ -2,6 +2,7 @@ import SwiftUI
 
 /// H07 recording → H08 processing → H09 result with the correction diff.
 struct RecordingView: View {
+    @ScaledMetric(relativeTo: .title2) private var transcriptSize = 25
     let flow: HostDictation
     let model: ModelService
     var close: () -> Void
@@ -17,6 +18,8 @@ struct RecordingView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button { flow.cancel(); close() } label: { Image(systemName: "chevron.left") }
+                            .frame(minWidth: 44, minHeight: 44)
+                            .foregroundStyle(Color.ink)
                             .accessibilityLabel("Back")
                     }
                 }
@@ -61,7 +64,7 @@ struct RecordingView: View {
             }
             .padding(.top, 16)
             Text("Speak naturally. Say “sorry, I mean…” to correct yourself.")
-                .font(.system(size: 25)).foregroundStyle(Color.inkSecondary)
+                .font(.system(size: transcriptSize)).foregroundStyle(Color.inkSecondary)
             Spacer()
             Meter(levels: flow.levels).frame(height: 56)
             ZStack {
@@ -96,6 +99,7 @@ private struct Meter: View {
 }
 
 struct ResultView: View {
+    @ScaledMetric(relativeTo: .title2) private var resultSize = 23
     let pending: PendingDictation
     @State private var copied = false
 
@@ -104,7 +108,7 @@ struct ResultView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Ready to insert").font(.largeTitle.bold()).foregroundStyle(Color.ink)
                 Text(pending.text)
-                    .font(.system(size: 23))
+                    .font(.system(size: resultSize))
                     .foregroundStyle(Color.ink)
                     .textSelection(.enabled)
                     .padding(16)
@@ -126,7 +130,8 @@ struct ResultView: View {
             }
             .padding(.top, 8)
         }
-        .safeAreaInset(edge: .bottom) {
+        .scrollEdgeEffectStyle(.hard, for: .bottom)
+        .safeAreaBar(edge: .bottom, spacing: 0) {
             VStack(spacing: 12) {
                 Text("Switch back to your app, then tap Insert.").font(.footnote).foregroundStyle(Color.inkSecondary)
                 PrimaryButton(title: copied ? "Copied" : "Copy text", symbol: "doc.on.doc") {
@@ -134,28 +139,64 @@ struct ResultView: View {
                     copied = true
                 }
             }
+            .padding(.top, 12)
             .padding(.bottom, 16)
-            .background(Color.paper)
+            .background(Color.paper.ignoresSafeArea(edges: .bottom))
         }
     }
 }
 
 /// "Monday → Tuesday": struck-through source, arrow, underlined neutral-filled insertion.
 struct CorrectionDiff: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let change: CorrectionChange
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(change.from).strikethrough().foregroundStyle(Color.inkSecondary)
-            if !change.to.isEmpty {
-                Image(systemName: "arrow.right").font(.caption).foregroundStyle(Color.inkSecondary)
-                Text(change.to).underline().foregroundStyle(Color.ink)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.insertion, in: RoundedRectangle(cornerRadius: 4))
+        Group {
+            if change.to.isEmpty {
+                source
+            } else if dynamicTypeSize.isAccessibilitySize {
+                stacked
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        source
+                        arrow("arrow.right")
+                        replacement
+                    }
+                    .fixedSize()
+                    stacked
+                }
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(change.to.isEmpty ? "Removed \(change.from)" : "\(change.from) changed to \(change.to)")
         .accessibilityIdentifier("host.correction")
+    }
+
+    private var source: some View {
+        Text(change.from).strikethrough().foregroundStyle(Color.inkSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var replacement: some View {
+        Text(change.to).underline().foregroundStyle(Color.ink)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(Color.insertion, in: RoundedRectangle(cornerRadius: 4))
+    }
+
+    private var stacked: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            source.frame(maxWidth: .infinity, alignment: .leading)
+            arrow("arrow.down")
+            replacement
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func arrow(_ symbol: String) -> some View {
+        Image(systemName: symbol).font(.caption).foregroundStyle(Color.inkSecondary)
+            .accessibilityHidden(true)
     }
 }
