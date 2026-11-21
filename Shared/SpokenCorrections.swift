@@ -44,7 +44,7 @@ enum SpokenCorrections {
         #"\b(?:"# + weekdays + #")\b"#,
         #"\b(?:"# + months + #")\b"#,
         #"\b"# + time + #"(?=\W|$)"#,
-        #"(?<![\w$])"# + number + #"\b"#,
+        #"(?<![\w$])"# + number + #"(?![\w%])"#,
     ]
 
     static func apply(_ raw: String) -> CorrectionResult {
