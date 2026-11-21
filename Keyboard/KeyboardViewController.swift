@@ -28,6 +28,8 @@ final class KeyboardViewController: UIInputViewController {
     private var lettersShown = false { didSet { render() } }
     private var pending: PendingEdit?
     private var waitTask: Task<Void, Never>?
+    /// On screen in an active app; a response applied otherwise edits nothing.
+    private var visible = false
     private var deleteTimer: Timer?
     /// The last Fix, Rewrite or Insert, so Undo can restore what was there before.
     private var lastEdit: (original: String, result: String)?
@@ -53,17 +55,42 @@ final class KeyboardViewController: UIInputViewController {
         super.viewDidLoad()
         buildLayout()
         render()
+        // Opening the app doesn't take the keyboard's view off screen, so follow the text field's app instead.
+        let center = NotificationCenter.default
+        center.addObserver(forName: .NSExtensionHostWillResignActive, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.hostInactive() }
+        }
+        center.addObserver(forName: .NSExtensionHostDidBecomeActive, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.hostActive() }
+        }
+    }
+
+    private func hostInactive() {
+        visible = false
+        waitTask?.cancel()
+    }
+
+    private func hostActive() {
+        guard view.window != nil else { return }
+        visible = true
+        resumePendingEdit()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         if hasFullAccess { AppGroup.defaults.set(Date().timeIntervalSince1970, forKey: SharedKeys.keyboardHandshake) }
-        resumePendingEdit()
         render()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        visible = true
+        resumePendingEdit()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        hostInactive()
         if state == .listening { _ = mic?.stop(); state = .idle }
     }
 
@@ -584,8 +611,12 @@ final class KeyboardViewController: UIInputViewController {
         waitTask?.cancel()
         waitTask = Task { @MainActor in
             for _ in 0..<600 {
-                guard let edit = self.pending else { return }
-                if let response = Bridge.takeResponse(edit.id) {
+                guard let edit = self.pending, !Task.isCancelled else { return }
+                // While the app is open the keyboard is off screen, and the text field's context isn't
+                // there yet right after it comes back; leave the response for when it can be applied.
+                let proxy = self.textDocumentProxy
+                let connected = edit.selection || (proxy.documentContextBeforeInput ?? "") + (proxy.documentContextAfterInput ?? "") != ""
+                if self.visible, connected, let response = Bridge.takeResponse(edit.id) {
                     self.pending = nil
                     AppGroup.defaults.removeObject(forKey: "pendingEdit")
                     if let text = response.text { if self.apply(edit, text: text) { self.show("Fixed") } }
