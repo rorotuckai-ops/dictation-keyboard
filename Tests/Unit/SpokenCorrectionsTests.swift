@@ -21,6 +21,15 @@ final class SpokenCorrectionsTests: XCTestCase {
         XCTAssertFalse(r.needsModel)
     }
 
+    func testCompoundAndPercentCorrections() {
+        XCTAssertEqual(fix("Meet Monday at noon, sorry I mean Tuesday at 1pm."), "Meet Tuesday at 1pm.")
+        XCTAssertEqual(fix("Raise it 10%, sorry I mean 20%."), "Raise it 20%.")
+    }
+
+    func testDeleteSentenceWithDecimals() {
+        XCTAssertEqual(fix("Hi there. It costs 4.50 at 5 p.m. today. Delete the last sentence."), "Hi there.")
+    }
+
     func testScratchThat() {
         XCTAssertEqual(fix("Meet at the cafe. Scratch that. Meet at the library."), "Meet at the library.")
         XCTAssertEqual(fix("Hi Sam. I'll bring cake scratch that I'll bring pie."), "Hi Sam. I'll bring pie.")
