@@ -130,7 +130,8 @@ struct ResultView: View {
             }
             .padding(.top, 8)
         }
-        .safeAreaInset(edge: .bottom) {
+        .scrollEdgeEffectStyle(.soft, for: .bottom)
+        .safeAreaBar(edge: .bottom, spacing: 0) {
             VStack(spacing: 12) {
                 Text("Switch back to your app, then tap Insert.").font(.footnote).foregroundStyle(Color.inkSecondary)
                 PrimaryButton(title: copied ? "Copied" : "Copy text", symbol: "doc.on.doc") {
@@ -138,8 +139,8 @@ struct ResultView: View {
                     copied = true
                 }
             }
+            .padding(.top, 12)
             .padding(.bottom, 16)
-            .background(Color.paper)
         }
     }
 }
