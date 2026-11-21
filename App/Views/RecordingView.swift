@@ -146,20 +146,55 @@ struct ResultView: View {
 
 /// "Monday → Tuesday": struck-through source, arrow, underlined neutral-filled insertion.
 struct CorrectionDiff: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let change: CorrectionChange
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(change.from).strikethrough().foregroundStyle(Color.inkSecondary)
-            if !change.to.isEmpty {
-                Image(systemName: "arrow.right").font(.caption).foregroundStyle(Color.inkSecondary)
-                Text(change.to).underline().foregroundStyle(Color.ink)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.insertion, in: RoundedRectangle(cornerRadius: 4))
+        Group {
+            if change.to.isEmpty {
+                source
+            } else if dynamicTypeSize.isAccessibilitySize {
+                stacked
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        source
+                        arrow("arrow.right")
+                        replacement
+                    }
+                    .fixedSize()
+                    stacked
+                }
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(change.to.isEmpty ? "Removed \(change.from)" : "\(change.from) changed to \(change.to)")
         .accessibilityIdentifier("host.correction")
+    }
+
+    private var source: some View {
+        Text(change.from).strikethrough().foregroundStyle(Color.inkSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var replacement: some View {
+        Text(change.to).underline().foregroundStyle(Color.ink)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(Color.insertion, in: RoundedRectangle(cornerRadius: 4))
+    }
+
+    private var stacked: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            source.frame(maxWidth: .infinity, alignment: .leading)
+            arrow("arrow.down")
+            replacement
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func arrow(_ symbol: String) -> some View {
+        Image(systemName: symbol).font(.caption).foregroundStyle(Color.inkSecondary)
+            .accessibilityHidden(true)
     }
 }
