@@ -44,9 +44,20 @@ final class ModelService {
 
     var modelName: String { modelURL?.deletingPathExtension().lastPathComponent ?? "No model" }
 
+    private var loading: Task<Void, Never>?
+
+    /// Loads the model once; concurrent callers wait for the same load.
     func loadIfPossible() async {
         if engine != nil { return }
         if case .downloading = status { return }
+        if let loading { return await loading.value }
+        let task = Task { await load() }
+        loading = task
+        await task.value
+        loading = nil
+    }
+
+    private func load() async {
         modelURL = Self.findModel()
         guard let modelURL else {
             status = .missing
