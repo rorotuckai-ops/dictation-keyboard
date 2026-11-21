@@ -89,10 +89,50 @@ enum Transcriber {
         let analyzer = SpeechAnalyzer(
             modules: [module.module],
             options: SpeechAnalyzer.Options(priority: .userInitiated, modelRetention: .whileInUse))
-        let file = try AVAudioFile(forReading: url)
+        var file = try AVAudioFile(forReading: url)
+        if let best = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [module.module]),
+           !matches(file.fileFormat, best) {
+            file = try convert(file, to: best)
+        }
         async let text = module.finalText()
         try await analyzer.start(inputAudioFile: file, finishAfterFile: true)
         return try await text
+    }
+
+    private static func matches(_ a: AVAudioFormat, _ b: AVAudioFormat) -> Bool {
+        a.sampleRate == b.sampleRate && a.channelCount == b.channelCount && a.commonFormat == b.commonFormat
+    }
+
+    /// SpeechAnalyzer only accepts its own audio format, so the clip is resampled into a temp file first.
+    private static func convert(_ source: AVAudioFile, to format: AVAudioFormat) throws -> AVAudioFile {
+        let frames = AVAudioFrameCount(source.length)
+        guard let input = AVAudioPCMBuffer(pcmFormat: source.processingFormat, frameCapacity: frames),
+              let converter = AVAudioConverter(from: source.processingFormat, to: format) else {
+            throw Failure.onDeviceUnavailable
+        }
+        try source.read(into: input)
+        let ratio = format.sampleRate / source.processingFormat.sampleRate
+        guard let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(Double(frames) * ratio) + 1024) else {
+            throw Failure.onDeviceUnavailable
+        }
+        var fed = false
+        var error: NSError?
+        converter.convert(to: output, error: &error) { _, status in
+            if fed { status.pointee = .endOfStream; return nil }
+            fed = true
+            status.pointee = .haveData
+            return input
+        }
+        if let error { throw error }
+        let url = source.url.deletingLastPathComponent()
+            .appendingPathComponent("analyzer-\(UUID().uuidString).caf")
+        do {
+            let out = try AVAudioFile(forWriting: url, settings: format.settings,
+                                      commonFormat: format.commonFormat, interleaved: format.isInterleaved)
+            try out.write(from: output)
+        }
+        defer { try? FileManager.default.removeItem(at: url) }
+        return try AVAudioFile(forReading: url, commonFormat: format.commonFormat, interleaved: format.isInterleaved)
     }
 
     private static func legacy(_ url: URL) async throws -> String {
